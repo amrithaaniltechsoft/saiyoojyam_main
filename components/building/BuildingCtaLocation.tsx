@@ -14,7 +14,7 @@ import {
   BookmarkCheck,
 } from "lucide-react";
 import { BuildingDetailData } from "@/data/buildingsData";
-import { RoomItem, ROOMS_DATA } from "@/data/roomsData";
+import { RoomItem } from "@/data/roomsData";
 import { BookingDrawer } from "./BookingDrawer";
 import { WhatsAppIcon } from "./WhatsAppIcon";
 

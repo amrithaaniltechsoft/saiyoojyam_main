@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ROOMS_DATA, RoomItem } from "@/data/roomsData";
+import { RoomItem } from "@/data/roomsData";
 import { RoomCard } from "@/components/search/RoomCard";
 import { BottomFeatureHighlights } from "@/components/search/BottomFeatureHighlights";
 import { OverlaySearchFilter } from "@/components/search/OverlaySearchFilter";
@@ -96,7 +96,6 @@ export function SearchResultsView({
   const [dynamicBuildings, setDynamicBuildings] = useState<DynamicBuildingOption[]>([]);
   const [dynamicRoomTypes, setDynamicRoomTypes] = useState<any[]>([]);
   const [dynamicCategories, setDynamicCategories] = useState<Record<string, TowerRoomFilter[]>>({});
-  const [useFallback, setUseFallback] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
@@ -210,20 +209,16 @@ export function SearchResultsView({
 
           if (Array.isArray(json.data)) {
             setApiRooms(json.data);
-            setUseFallback(false);
           } else {
             setApiRooms([]);
-            setUseFallback(false);
           }
         } else {
           setApiRooms([]);
-          setUseFallback(false);
         }
       })
       .catch((err) => {
         console.warn("Could not fetch rooms from API:", err);
         setApiRooms([]);
-        setUseFallback(false);
       })
       .finally(() => setLoading(false));
   }, [selectedLocation, selectedDate, selectedRoomType, selectedTowerFilter]);
@@ -356,7 +351,7 @@ export function SearchResultsView({
 
       return true;
     });
-  }, [apiRooms, useFallback, selectedLocation, selectedRoomType, selectedTowerFilter]);
+  }, [apiRooms, selectedLocation, selectedRoomType, selectedTowerFilter]);
 
   // All rooms available in the selected building across all sharing types
   const allBuildingRooms = useMemo(() => {
@@ -367,7 +362,7 @@ export function SearchResultsView({
       }
       return true;
     });
-  }, [allApiRooms, apiRooms, useFallback, selectedLocation]);
+  }, [allApiRooms, apiRooms, selectedLocation]);
 
   const handleFilterUpdate = (newLoc: string, newType: string, newDate?: string) => {
     let typeToUse = newType;

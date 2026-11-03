@@ -17,7 +17,7 @@ import {
   Snowflake,
   CheckCircle2,
 } from "lucide-react";
-import { BuildingDetailData, BUILDINGS_DATA } from "@/data/buildingsData";
+import { BuildingDetailData } from "@/data/buildingsData";
 import { RoomItem } from "@/data/roomsData";
 import { FancyDatePicker } from "@/components/ui/FancyDatePicker";
 
@@ -28,12 +28,6 @@ interface BookingDrawerProps {
   room?: RoomItem;
   buildings?: any[];
 }
-
-const BUILDING_OPTIONS = [
-  { slug: "premier", label: "Saiyoojyam LH - Premier" },
-  { slug: "annex", label: "Saiyoojyam LH - Annex" },
-  { slug: "towers", label: "Saiyoojyam LH - Towers" },
-];
 
 export function BookingDrawer({
   isOpen,
@@ -217,7 +211,7 @@ export function BookingDrawer({
         ? buildings
         : fetchedBuildings && fetchedBuildings.length > 0
         ? fetchedBuildings
-        : BUILDING_OPTIONS;
+        : [];
 
     const seen = new Set<string>();
     const result: { slug: string; label: string }[] = [];
@@ -243,7 +237,7 @@ export function BookingDrawer({
       result.push({ slug, label: cleanName });
     }
 
-    return result.length > 0 ? result : BUILDING_OPTIONS;
+    return result.length > 0 ? result : (building.slug ? [{ slug: building.slug, label: building.name || building.slug }] : []);
   }, [buildings, fetchedBuildings, building]);
 
   if (!isOpen) return null;
@@ -251,7 +245,6 @@ export function BookingDrawer({
   const currentBuilding =
     (fetchedBuildings.find((b) => (b.slug || "").toLowerCase() === selectedBuildingSlug)) ||
     (building.slug?.toLowerCase() === selectedBuildingSlug ? building : null) ||
-    BUILDINGS_DATA[selectedBuildingSlug] ||
     building;
 
   const handleBuildingChange = (newSlug: string) => {

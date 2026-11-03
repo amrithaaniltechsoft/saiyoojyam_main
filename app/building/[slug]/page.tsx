@@ -7,7 +7,7 @@ import { BuildingGallery } from "@/components/building/BuildingGallery";
 import { BuildingAmenities } from "@/components/building/BuildingAmenities";
 import { BuildingFeatures } from "@/components/building/BuildingFeatures";
 import { BuildingInteractiveSections } from "@/components/building/BuildingInteractiveSections";
-import { ROOMS_DATA, RoomItem } from "@/data/roomsData";
+import { RoomItem } from "@/data/roomsData";
 
 interface BuildingPageProps {
   params: Promise<{

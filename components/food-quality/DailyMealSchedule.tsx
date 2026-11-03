@@ -20,66 +20,6 @@ interface DailyMealScheduleProps {
   data?: FoodMenuData;
 }
 
-const DEFAULT_SCHEDULE: MealScheduleItem[] = [
-  {
-    icon: "Sun",
-    meal: "Morning Breakfast",
-    time: "7:00 AM – 9:00 AM",
-    readyNote: "Fresh & piping hot",
-    badge: "Energizing Start",
-    menuItems: [
-      "Steamed Idli with fresh Coconut Chutney & Kerala Sambar",
-      "Crispy Dosa with Tomato Onion Chutney & Podi",
-      "Traditional Kerala Puttu paired with aromatic Kadala Curry",
-      "Soft Appam with vegetable or egg stew",
-      "Fluffy Poori served with lightly spiced Potato Masala",
-      "Semolina Vegetable Upma with ripe bananas",
-    ],
-  },
-  {
-    icon: "Soup",
-    meal: "Packed Lunch Tiffin",
-    time: "Ready by 7:30 AM",
-    readyNote: "Convenient for office & college",
-    badge: "Office Ready",
-    menuItems: [
-      "Fragrant Kuruva/Matta rice or Ponni white rice",
-      "Flavourful Kerala Sambar, Moru Curry, or Dal Fry",
-      "Seasonal Vegetable Thoran (Cabbage, Beans, Carrot, Beetroot)",
-      "Crisp Vegetable Mezhukkupuratti & Papadam",
-      "Tangy homemade lemon / mango pickles",
-      "Nutritious Curd or spiced Butter Milk on select days",
-    ],
-  },
-  {
-    icon: "Coffee",
-    meal: "Evening Tea & Snacks",
-    time: "5:30 PM – 6:30 PM",
-    readyNote: "Post-work refreshment",
-    badge: "Relaxation",
-    menuItems: [
-      "Freshly brewed hot Tea (Chai) and South Indian Filter Coffee",
-      "Light evening snacks (Biscuits, Banana Fritters, Veg Cutlets, or Sundal)",
-      "Refreshing and quiet break in the hostel dining area",
-      "Electric kettle & hot water available for late arrivals",
-    ],
-  },
-  {
-    icon: "Moon",
-    meal: "Wholesome Dinner",
-    time: "8:00 PM – 9:30 PM",
-    readyNote: "Served warm till gate closing",
-    badge: "Nutritious & Light",
-    menuItems: [
-      "Soft, whole wheat handmade Chapatis / Rotis",
-      "Paneer Butter Masala, Mixed Veg Kurma, or Dal Tadka",
-      "Non-Veg specials on scheduled weekly nights (Chicken curry/fish fry)",
-      "Light boiled rice with nourishing rasam for light digestion",
-      "Clean dining setup with reheating facilities if needed",
-    ],
-  },
-];
-
 function renderMealIcon(iconName?: string) {
   const iconProps = { className: "w-5 h-5 sm:w-6 sm:h-6 text-[#FF561C]" };
   switch ((iconName || "").toLowerCase()) {
@@ -98,13 +38,17 @@ function renderMealIcon(iconName?: string) {
 }
 
 export function DailyMealSchedule({ data }: DailyMealScheduleProps) {
+  const schedule = data?.schedule && data.schedule.length > 0 ? data.schedule : [];
+
+  if (!schedule || schedule.length === 0) {
+    return null;
+  }
+
   const subtitle = data?.subtitle || "Daily Routine";
   const title = data?.title || "Our Daily Meal Schedule & Menu";
   const description =
     data?.description ||
     "Enjoy a balanced combination of traditional Kerala home cooking and popular North Indian staples, thoughtfully portioned to provide clean, healthy fuel throughout the day.";
-  const schedule =
-    data?.schedule && data.schedule.length > 0 ? data.schedule : DEFAULT_SCHEDULE;
 
   return (
     <section className="w-full py-12 sm:py-16 bg-[#fffaf8]">

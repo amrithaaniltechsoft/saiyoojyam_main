@@ -22,13 +22,6 @@ interface MobileRoomFilterDrawerProps {
   buildingCategories?: Record<string, TowerRoomFilter[]>;
 }
 
-const DEFAULT_BUILDING_OPTIONS: { id: string; label: string }[] = [
-  { id: "all", label: "All Buildings" },
-  { id: "premier", label: "Saiyoojyam Premier" },
-  { id: "annex", label: "Saiyoojyam Annex" },
-  { id: "towers", label: "Saiyoojyam Towers 1 & 2" },
-];
-
 export function MobileRoomFilterDrawer({
   isOpen,
   onClose,
@@ -41,7 +34,7 @@ export function MobileRoomFilterDrawer({
   buildingCategories,
 }: MobileRoomFilterDrawerProps) {
   const buildingOptions = useMemo(() => {
-    const raw = buildings && buildings.length > 0 ? buildings : DEFAULT_BUILDING_OPTIONS;
+    const raw = buildings && buildings.length > 0 ? buildings : [];
     const seen = new Set<string>();
     const result: { id: string; label: string }[] = [];
 
@@ -123,7 +116,7 @@ export function MobileRoomFilterDrawer({
   };
 
   const currentBuildingObj =
-    buildingOptions.find((b) => b.id === selectedBuilding) || buildingOptions[0] || DEFAULT_BUILDING_OPTIONS[0];
+    buildingOptions.find((b) => b.id === selectedBuilding) || buildingOptions[0] || { id: "all", label: "All Buildings" };
 
   const buildingsToShow = buildingOptions
     .filter((b) => b.id !== "all")

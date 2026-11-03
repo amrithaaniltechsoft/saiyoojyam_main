@@ -66,20 +66,10 @@ export interface SearchFilterProps {
 
 export const locationOptions = [
   { value: "all", label: "All Hostels (Kochi)" },
-  { value: "annex1", label: "Saiyoojyam Annex1" },
-  { value: "lh-tower-1", label: "Saiyoojyam LH - Tower 1" },
-  { value: "lh-tower-2", label: "Saiyoojyam LH - Tower 2" },
-  { value: "premier", label: "Saiyoojyam Premier" },
-  { value: "annex", label: "Saiyoojyam Annex" },
-  { value: "towers", label: "Saiyoojyam Towers" },
 ];
 
 export const roomTypeOptions = [
   { value: "all", label: "All room types" },
-  { value: "1", label: "1 Bed · Single Private Suite" },
-  { value: "2", label: "2-Sharing Room · AC / Non-AC" },
-  { value: "3", label: "3-Sharing Room · Work Desk" },
-  { value: "4", label: "4-Sharing Room · Economy" },
 ];
 
 export function SearchFilter({
@@ -221,7 +211,7 @@ export function SearchFilter({
         ? buildings
         : fetchedBuildings && fetchedBuildings.length > 0
         ? fetchedBuildings
-        : locationOptions;
+        : [];
 
     const seen = new Set<string>();
     const result: { value: string; label: string }[] = [];
@@ -249,7 +239,7 @@ export function SearchFilter({
         ? roomTypes
         : fetchedRoomTypes && fetchedRoomTypes.length > 0
         ? fetchedRoomTypes
-        : roomTypeOptions;
+        : [];
 
     const seenValues = new Set<string>();
     const seenLabels = new Set<string>();

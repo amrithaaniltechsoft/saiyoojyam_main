@@ -8,7 +8,6 @@ import {
   BuildingData,
   BuildingAmenityItem,
 } from "@/components/amenities";
-import { BUILDINGS_DATA } from "@/data/buildingsData";
 
 export async function generateMetadata(): Promise<Metadata> {
   // Fetch meta title, meta description, and meta keywords from saiyoojyam_seo table where id = 3 (Facilities/Amenities)
@@ -89,31 +88,10 @@ async function getBuildings(): Promise<BuildingData[]> {
       }
     }
   } catch (err) {
-    console.warn("Could not fetch buildings from API, using fallback data:", err);
+    console.warn("Could not fetch buildings from API:", err);
   }
 
-  // Fallback to static BUILDINGS_DATA if API fails
-  return Object.values(BUILDINGS_DATA).map((b, idx) => ({
-    id: idx + 1,
-    building_id: idx + 1,
-    slug: b.slug,
-    name: b.name,
-    building_name: b.name,
-    tagline: b.tagline,
-    building_tagline: b.tagline,
-    address: b.address,
-    building_address: b.address,
-    description: b.description,
-    mainImage: b.heroImages?.main || "",
-    building_image: b.heroImages?.main || "",
-    moreImages: b.moreImages || [],
-    images: b.moreImages || [],
-    building_key_amenities: b.amenitiesGrid || [],
-    amenitiesGrid: b.amenitiesGrid || [],
-    building_living_facilities: b.featuresList || [],
-    featuresList: b.featuresList || [],
-    bookingFormWhatsappNumber: b.bookingFormWhatsappNumber || "918129339122",
-  }));
+  return [];
 }
 
 export default async function AmenitiesPage() {

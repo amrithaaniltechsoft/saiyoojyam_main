@@ -1,6 +1,6 @@
 import { Metadata } from "next";
-import { BUILDINGS_DATA, BuildingDetailData } from "@/data/buildingsData";
-import { ROOMS_DATA, RoomItem } from "@/data/roomsData";
+import { BuildingDetailData } from "@/data/buildingsData";
+import { RoomItem } from "@/data/roomsData";
 import { Footer } from "@/components/global/Footer";
 import { CheckoutHeader } from "@/components/checkout/CheckoutHeader";
 import { CheckoutSteps } from "@/components/checkout/CheckoutSteps";
@@ -84,11 +84,28 @@ async function getBuildingData(slug: string): Promise<BuildingDetailData> {
     }
   } catch {}
 
-  // Fallback to static dictionary or premier
-  const fallback = BUILDINGS_DATA[slug] || BUILDINGS_DATA.premier;
   return {
-    ...fallback,
-    slug: slug || fallback.slug,
+    slug,
+    name: "",
+    tagline: "",
+    address: "",
+    building_address: "",
+    description: "",
+    bookingFormWhatsappNumber: "918129339122",
+    mapEmbedUrl: "",
+    mapDirectUrl: "",
+    heroImages: {
+      main: "",
+      sub1: "",
+      sub2: "",
+      sub3: "",
+    },
+    moreImages: [],
+    amenitiesGrid: [],
+    featuresList: [],
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: "",
   };
 }
 
@@ -153,21 +170,6 @@ async function getRoomData(
     } catch {}
   }
 
-  // 3. Fallback to static mock rooms if any
-  if (cleanId) {
-    const found = ROOMS_DATA.find(
-      (r) =>
-        r.id.toLowerCase() === cleanId ||
-        r.id.toLowerCase() === `room-${cleanNum}` ||
-        r.roomNumber.toLowerCase() === cleanId ||
-        r.roomNumber.toLowerCase() === cleanNum
-    );
-    if (found) return found;
-  }
-  if (buildingSlug) {
-    const found = ROOMS_DATA.find((r) => r.buildingKey === buildingSlug);
-    if (found) return found;
-  }
   return undefined;
 }
 
@@ -216,11 +218,7 @@ export default async function CheckoutPaymentPage({ searchParams }: CheckoutPaym
   // Pricing calculation
   const numericMonthlyRent = room
     ? (room.rentPriceRaw ?? parseInt(String(room.rentMonthly || "0").replace(/[^0-9]/g, ""), 10) ?? 0)
-    : buildingSlugParam === "annex" || buildingSlugParam === "annex1"
-    ? 7000
-    : buildingSlugParam.includes("tower")
-    ? 8500
-    : 12000;
+    : 0;
 
   // Admission fees and Caution deposit from Room Tariff, or fallback to Building defaults
   let admissionFees = room?.admissionFees ?? room?.tariffsAdmissionFees ?? 0;

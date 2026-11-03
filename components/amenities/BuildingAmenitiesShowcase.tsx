@@ -119,6 +119,10 @@ export function renderAmenityIcon(iconName: string, className?: string) {
 export function BuildingAmenitiesShowcase({ buildings }: BuildingAmenitiesShowcaseProps) {
   const [selectedSlug, setSelectedSlug] = useState<string>("all");
 
+  if (!buildings || buildings.length === 0) {
+    return null;
+  }
+
   const displayedBuildings =
     selectedSlug === "all"
       ? buildings

@@ -9,13 +9,6 @@ interface BuildingFilterTabsProps {
   buildings?: DynamicBuildingOption[];
 }
 
-const DEFAULT_TABS = [
-  { key: "all", label: "All Buildings" },
-  { key: "premier", label: "Saiyoojyam Premier" },
-  { key: "annex", label: "Saiyoojyam Annex" },
-  { key: "towers", label: "Saiyoojyam Towers 1 & 2" },
-];
-
 export function BuildingFilterTabs({
   selectedLocation,
   selectedRoomType,
@@ -23,7 +16,7 @@ export function BuildingFilterTabs({
   buildings,
 }: BuildingFilterTabsProps) {
   const tabs = useMemo(() => {
-    const raw = buildings && buildings.length > 0 ? buildings : DEFAULT_TABS;
+    const raw = buildings && buildings.length > 0 ? buildings : [];
     const seen = new Set<string>();
     const result: { key: string; label: string }[] = [];
 

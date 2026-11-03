@@ -16,36 +16,18 @@ interface FoodQualityFaqProps {
   data?: FoodFaqData;
 }
 
-const DEFAULT_FAQS: FaqItem[] = [
-  {
-    q: "What time are morning breakfast and packed lunch tiffins ready?",
-    a: "Both fresh breakfast and packed lunch tiffin boxes are ready by 7:30 AM every morning. This ensures that working women catching office cabs to Infopark / SmartCity or students attending early lectures at Rajagiri or Jain University never miss their meals.",
-  },
-  {
-    q: "What kind of drinking water is provided?",
-    a: "We provide clean, purified drinking water from multi-stage RO filtration plants. Additionally, boiled warm drinking water is available 24/7 for residents.",
-  },
-  {
-    q: "Do you accommodate both North Indian and South Indian food preferences?",
-    a: "Yes! Our menu features a wholesome combination of Kerala traditional dishes (such as Puttu, Appam, Idli, Dosa, Sambar, Moru curry) and North Indian staples (warm whole-wheat Chapatis, Rotis, Dal Tadka, and mixed vegetable curries).",
-  },
-  {
-    q: "Can I store my personal snacks or beverages?",
-    a: "Yes. Every property provides common refrigerators and pantry counters in the dining area where inmates can keep labeled personal fruits, juices, or dairy items.",
-  },
-  {
-    q: "What if I get delayed at office and miss dinner time?",
-    a: "Dinner is served between 8:00 PM and 9:30 PM, and food is kept warm. Inmates returning close to gate closure (10:00 PM) can still enjoy their warm dinner in the dining hall.",
-  },
-];
-
 export function FoodQualityFaq({ data }: FoodQualityFaqProps) {
+  const items = data?.items && data.items.length > 0 ? data.items : [];
+
+  if (!items || items.length === 0) {
+    return null;
+  }
+
   const subtitle = data?.subtitle || "Dining FAQ";
   const title = data?.title || "Frequently Asked Questions";
   const description =
     data?.description ||
     "Everything you need to know about dining routines, food quality, and kitchen facilities.";
-  const items = data?.items && data.items.length > 0 ? data.items : DEFAULT_FAQS;
 
   return (
     <section className="w-full py-12 sm:py-16 bg-[#fffaf8]">

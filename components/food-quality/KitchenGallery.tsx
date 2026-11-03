@@ -18,40 +18,18 @@ interface KitchenGalleryProps {
   data?: FoodGalleryData;
 }
 
-const DEFAULT_GALLERY: GalleryItem[] = [
-  {
-    image: "/why-us/food-quality.png",
-    title: "Nutritious Homely Cooking",
-    caption:
-      "Prepared with top-quality grains, fresh seasonal vegetables, and genuine home recipes.",
-  },
-  {
-    image: "/why-us/dining.png",
-    title: "Spacious & Clean Dining Hall",
-    caption:
-      "A bright, well-organized communal dining hall fostering friendly interactions among residents.",
-  },
-  {
-    image: "/why-us/dining2.png",
-    title: "Hygienic Modern Kitchen Facility",
-    caption:
-      "Clean countertops, separate wash area, food storage refrigerator, and strict daily maintenance.",
-  },
-  {
-    image: "/home-hero/h1.png",
-    title: "Pure Drinking Water & Refreshments",
-    caption:
-      "24/7 boiled herbal drinking water and advanced multi-stage RO water purification plant.",
-  },
-];
-
 export function KitchenGallery({ data }: KitchenGalleryProps) {
+  const allItems = data?.items && data.items.length > 0 ? data.items : [];
+
+  if (!allItems || allItems.length === 0) {
+    return null;
+  }
+
   const subtitle = data?.subtitle || "Campus Dining Experience";
   const title = data?.title || "Glimpse of Our Dining & Kitchen Spaces";
   const description =
     data?.description ||
     "Take a look inside our clean dining environments and food preparation areas maintained daily across our Kakkanad hostel properties.";
-  const allItems = data?.items && data.items.length > 0 ? data.items : DEFAULT_GALLERY;
   const items = allItems.slice(0, 3);
 
   return (
