@@ -1,4 +1,202 @@
-import { Lock, CreditCard, AlertCircle, LogIn } from "lucide-react";
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import {
+  Lock,
+  CreditCard,
+  AlertCircle,
+  LogIn,
+  UploadCloud,
+  FileText,
+  Image as ImageIcon,
+  X,
+  CheckCircle2,
+} from "lucide-react";
+
+interface DocumentDropzoneProps {
+  label: string;
+  accept: string;
+  acceptText?: string;
+  fileName: string;
+  file?: File | null;
+  allowPdf?: boolean;
+  onFileChange: (file: File) => void;
+  onClear: () => void;
+}
+
+function DocumentDropzone({
+  label,
+  accept,
+  acceptText,
+  fileName,
+  file,
+  allowPdf = false,
+  onFileChange,
+  onClear,
+}: DocumentDropzoneProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (file && file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [file]);
+
+  const handleSelectedFile = (f: File) => {
+    onFileChange(f);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) {
+      handleSelectedFile(droppedFile);
+    }
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  return (
+    <div className="relative flex flex-col gap-1.5">
+      <label className="text-xs font-semibold text-gray-950 flex items-center justify-between">
+        <span>{label}</span>
+      </label>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => {
+          const selected = e.target.files?.[0];
+          if (selected) {
+            handleSelectedFile(selected);
+          }
+        }}
+      />
+
+      {fileName ? (
+        /* File Selected / Uploaded State */
+        <div className="w-full min-h-[96px] bg-orange-50/20 border border-orange-200 rounded-lg p-3 flex items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-3 overflow-hidden">
+            {previewUrl ? (
+              <div className="relative w-12 h-12 rounded-md overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+                <img
+                  src={previewUrl}
+                  alt={fileName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-md bg-orange-100 text-[#FF561C] flex items-center justify-center shrink-0 border border-orange-200">
+                {allowPdf && fileName.toLowerCase().endsWith(".pdf") ? (
+                  <FileText className="w-6 h-6 text-[#FF561C]" />
+                ) : (
+                  <ImageIcon className="w-6 h-6 text-[#FF561C]" />
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-col min-w-0">
+              <span
+                className="text-xs font-semibold text-gray-900 truncate max-w-[170px] sm:max-w-[200px]"
+                title={fileName}
+              >
+                {fileName}
+              </span>
+              <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-medium mt-0.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Ready {file?.size ? `(${formatFileSize(file.size)})` : ""}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="text-[11px] text-[#FF561C] hover:underline font-medium text-left mt-0.5 cursor-pointer"
+              >
+                Change file
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClear}
+            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors cursor-pointer shrink-0"
+            title="Remove file"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        /* Dropzone / Empty State */
+        <div
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => inputRef.current?.click()}
+          className={`w-full min-h-[96px] border-2 border-dashed rounded-lg p-3.5 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 select-none ${
+            isDragging
+              ? "border-[#FF561C] bg-orange-50/80 scale-[1.01] shadow-xs"
+              : "border-gray-300 bg-gray-50/50 hover:bg-orange-50/30 hover:border-orange-300"
+          }`}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <UploadCloud
+              className={`w-5 h-5 transition-colors ${
+                isDragging ? "text-[#FF561C] animate-bounce" : "text-gray-400"
+              }`}
+            />
+            <span className="text-xs font-semibold text-gray-800">
+              {isDragging ? "Drop image here" : "Drag & drop image here"}
+            </span>
+          </div>
+
+          <p className="text-[11px] text-gray-500 font-normal">
+            or <span className="text-[#FF561C] font-semibold underline">browse from device</span>
+          </p>
+
+          <span className="text-[10px] text-gray-400 mt-1">
+            {acceptText || "JPG, PNG, WEBP"} (max 10MB)
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface CheckoutGuestFormProps {
   name: string;
@@ -19,9 +217,11 @@ interface CheckoutGuestFormProps {
   setContactNumber: (v: string) => void;
   idProofFileName: string;
   setIdProofFileName: (v: string) => void;
+  idProofFile?: File | null;
   setIdProofFile?: (f: File | null) => void;
   photoFileName: string;
   setPhotoFileName: (v: string) => void;
+  photoFile?: File | null;
   setPhotoFile?: (f: File | null) => void;
   agreed: boolean;
   setAgreed: (v: boolean) => void;
@@ -61,9 +261,11 @@ export function CheckoutGuestForm({
   setContactNumber,
   idProofFileName,
   setIdProofFileName,
+  idProofFile,
   setIdProofFile,
   photoFileName,
   setPhotoFileName,
+  photoFile,
   setPhotoFile,
   agreed,
   setAgreed,
@@ -244,66 +446,53 @@ export function CheckoutGuestForm({
           </div>
         </div>
 
-        {/* Group 4: Document Uploads */}
+        {/* Group 4: Document Uploads with Drag & Drop */}
         <div className="space-y-4 pt-3 border-t border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900 pt-1">
-            Documents
-          </h3>
+          <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+            <h3 className="text-sm font-semibold text-gray-900">
+              Documents &amp; Verification
+            </h3>
+            <span className="text-[11px] text-gray-500 font-normal">
+              Drag &amp; drop or click to upload
+            </span>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5 pt-1">
-            {/* ID Proof */}
-            <div className="relative">
-              <label className="absolute -top-2.5 left-3 px-1.5 bg-white text-xs font-semibold text-gray-950 z-10">
-                ID proof
-              </label>
-              <div className="w-full h-11 flex items-center border border-gray-400 rounded-md overflow-hidden bg-white shadow-xs">
-                <label className="h-full px-3.5 bg-gray-100 hover:bg-gray-200 border-r border-gray-400 text-xs font-semibold text-gray-900 flex items-center cursor-pointer shrink-0 transition-colors">
-                  <span>Choose file</span>
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setIdProofFileName(file.name);
-                        if (setIdProofFile) setIdProofFile(file);
-                      }
-                    }}
-                  />
-                </label>
-                <span className="px-3 text-xs text-gray-800 font-medium truncate">
-                  {idProofFileName || "No file chosen"}
-                </span>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            {/* ID Proof Dropzone */}
+            <DocumentDropzone
+              label="ID proof"
+              accept="image/*,.pdf"
+              acceptText="JPG, PNG, WEBP, or PDF"
+              fileName={idProofFileName}
+              file={idProofFile}
+              allowPdf={true}
+              onFileChange={(f) => {
+                setIdProofFileName(f.name);
+                if (setIdProofFile) setIdProofFile(f);
+              }}
+              onClear={() => {
+                setIdProofFileName("");
+                if (setIdProofFile) setIdProofFile(null);
+              }}
+            />
 
-            {/* Profile Photo */}
-            <div className="relative">
-              <label className="absolute -top-2.5 left-3 px-1.5 bg-white text-xs font-semibold text-gray-950 z-10">
-                Profile Photo
-              </label>
-              <div className="w-full h-11 flex items-center border border-gray-400 rounded-md overflow-hidden bg-white shadow-xs">
-                <label className="h-full px-3.5 bg-gray-100 hover:bg-gray-200 border-r border-gray-400 text-xs font-semibold text-gray-900 flex items-center cursor-pointer shrink-0 transition-colors">
-                  <span>Choose file</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setPhotoFileName(file.name);
-                        if (setPhotoFile) setPhotoFile(file);
-                      }
-                    }}
-                  />
-                </label>
-                <span className="px-3 text-xs text-gray-800 font-medium truncate">
-                  {photoFileName || "No file chosen"}
-                </span>
-              </div>
-            </div>
+            {/* Profile Photo Dropzone */}
+            <DocumentDropzone
+              label="Profile Photo"
+              accept="image/*"
+              acceptText="JPG, PNG, or WEBP"
+              fileName={photoFileName}
+              file={photoFile}
+              allowPdf={false}
+              onFileChange={(f) => {
+                setPhotoFileName(f.name);
+                if (setPhotoFile) setPhotoFile(f);
+              }}
+              onClear={() => {
+                setPhotoFileName("");
+                if (setPhotoFile) setPhotoFile(null);
+              }}
+            />
           </div>
         </div>
 

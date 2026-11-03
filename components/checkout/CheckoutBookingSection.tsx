@@ -325,9 +325,11 @@ export function CheckoutBookingSection({
         setContactNumber={setContactNumber}
         idProofFileName={idProofFileName}
         setIdProofFileName={setIdProofFileName}
+        idProofFile={idProofFile}
         setIdProofFile={setIdProofFile}
         photoFileName={photoFileName}
         setPhotoFileName={setPhotoFileName}
+        photoFile={photoFile}
         setPhotoFile={setPhotoFile}
         agreed={agreed}
         setAgreed={setAgreed}
