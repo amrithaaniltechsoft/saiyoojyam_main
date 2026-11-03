@@ -1,0 +1,95 @@
+@import url("https://fonts.googleapis.com/css2?family=Courgette&family=League+Spartan:wght@100..900&family=Uncial+Antiqua&family=Varela+Round&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Atma&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200");
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Hour';
+  src: local('Hour'), local('Hour-Regular');
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: 'Hour', sans-serif;
+  --font-body: 'Hour', sans-serif;
+  --font-heading: 'League Spartan', sans-serif;
+  --color-primary: #FF561C;
+  --color-primary-container: #e0440d;
+  --color-on-primary: #ffffff;
+  --color-secondary: #904d00;
+  --color-secondary-container: #fe932c;
+  --color-tertiary: #006766;
+  --color-tertiary-container: #008281;
+  --color-surface: #ffffff;
+  --color-surface-container: #f0f4f9;
+  --color-surface-container-low: #f8fafc;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-surface: #0f172a;
+  --color-on-surface-variant: #334155;
+  --color-outline-variant: #cbd5e1;
+}
+
+body {
+  font-family: 'Hour', sans-serif !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-heading {
+  font-family: 'League Spartan', sans-serif !important;
+}
+
+.courgette-regular {
+  font-family: "Courgette", cursive !important;
+  font-weight: 400;
+  font-style: normal;
+}
+
+@keyframes drawUnderline {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-draw-underline {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: drawUnderline 1.4s cubic-bezier(0.65, 0, 0.35, 1) forwards 0.4s;
+}
+
+@keyframes rowFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-row-fade-in {
+  animation: rowFadeIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.font-sans-normal {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.building-page-scope,
+.building-page-scope *,
+.checkout-page-scope,
+.checkout-page-scope * {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
