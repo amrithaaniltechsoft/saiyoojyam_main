@@ -120,31 +120,8 @@ async function getRoomData(
   const cleanId = (roomIdParam || "").trim().toLowerCase();
   const cleanNum = cleanId.replace(/^room-/, "");
 
-  // 1. First attempt: search in all rooms WITHOUT date filter so the room details are always loaded
-  if (cleanId) {
-    try {
-      const res = await fetch(`${baseUrl}/api/rooms?location=all`, {
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json && json.status && Array.isArray(json.data) && json.data.length > 0) {
-          const found = json.data.find(
-            (r: any) =>
-              (r.id && r.id.toLowerCase() === cleanId) ||
-              (r.id && r.id.toLowerCase() === `room-${cleanNum}`) ||
-              (r.dbId && String(r.dbId) === cleanNum) ||
-              (r.roomNumber && r.roomNumber.toLowerCase() === cleanId) ||
-              (r.roomNumber && r.roomNumber.toLowerCase() === cleanNum)
-          );
-          if (found) return found;
-        }
-      }
-    } catch {}
-  }
-
-  // 2. Second attempt: search in building rooms without date filter
-  if (buildingSlug) {
+  // 1. If buildingSlug is specified and not 'all', search building rooms FIRST
+  if (buildingSlug && buildingSlug !== "all") {
     try {
       const res = await fetch(
         `${baseUrl}/api/rooms?location=${encodeURIComponent(buildingSlug)}`,
@@ -154,17 +131,54 @@ async function getRoomData(
         const json = await res.json();
         if (json && json.status && Array.isArray(json.data) && json.data.length > 0) {
           if (cleanId) {
-            const found = json.data.find(
+            // First check exact match by id or dbId
+            const foundExact = json.data.find(
               (r: any) =>
                 (r.id && r.id.toLowerCase() === cleanId) ||
                 (r.id && r.id.toLowerCase() === `room-${cleanNum}`) ||
-                (r.dbId && String(r.dbId) === cleanNum) ||
+                (r.dbId && String(r.dbId) === cleanNum)
+            );
+            if (foundExact) return foundExact;
+
+            // Second check by roomNumber
+            const foundRoomNum = json.data.find(
+              (r: any) =>
                 (r.roomNumber && r.roomNumber.toLowerCase() === cleanId) ||
                 (r.roomNumber && r.roomNumber.toLowerCase() === cleanNum)
             );
-            if (found) return found;
+            if (foundRoomNum) return foundRoomNum;
           }
           return json.data[0];
+        }
+      }
+    } catch {}
+  }
+
+  // 2. Global search across all rooms
+  if (cleanId) {
+    try {
+      const res = await fetch(`${baseUrl}/api/rooms?location=all`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.status && Array.isArray(json.data) && json.data.length > 0) {
+          // Check exact id or dbId first
+          const foundExact = json.data.find(
+            (r: any) =>
+              (r.id && r.id.toLowerCase() === cleanId) ||
+              (r.id && r.id.toLowerCase() === `room-${cleanNum}`) ||
+              (r.dbId && String(r.dbId) === cleanNum)
+          );
+          if (foundExact) return foundExact;
+
+          // Check roomNumber
+          const foundRoomNum = json.data.find(
+            (r: any) =>
+              (r.roomNumber && r.roomNumber.toLowerCase() === cleanId) ||
+              (r.roomNumber && r.roomNumber.toLowerCase() === cleanNum)
+          );
+          if (foundRoomNum) return foundRoomNum;
         }
       }
     } catch {}
