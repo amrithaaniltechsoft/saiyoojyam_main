@@ -77,12 +77,12 @@ export function CheckoutPropertyCard({ building, room }: CheckoutPropertyCardPro
     building.tagline ||
     "Kakkanad, Kochi";
 
-  // Dynamic Room Features fetched directly from Table: saiyoojyam_building (building_key_amenities & building_living_facilities)
+  // Dynamic Room Features fetched directly from Table: saiyoojyam_building (building_key_amenities)
   const dynamicFeatures = useMemo(() => {
     const list: { name: string; icon: string }[] = [];
     const seen = new Set<string>();
 
-    // 1. Key facilities & amenities from saiyoojyam_building.building_key_amenities
+    // Key facilities & amenities from saiyoojyam_building.building_key_amenities
     if (Array.isArray(building?.amenitiesGrid) && building.amenitiesGrid.length > 0) {
       for (const a of building.amenitiesGrid) {
         const title = (a.title || (a as any).name || "").trim();
@@ -96,27 +96,13 @@ export function CheckoutPropertyCard({ building, room }: CheckoutPropertyCardPro
       }
     }
 
-    // 2. Hostel amenities & living facilities from saiyoojyam_building.building_living_facilities
-    if (Array.isArray(building?.featuresList) && building.featuresList.length > 0) {
-      for (const f of building.featuresList) {
-        const text = (typeof f === "string" ? f : (f as any)?.name || (f as any)?.title || "").trim();
-        if (text && !seen.has(text.toLowerCase())) {
-          seen.add(text.toLowerCase());
-          list.push({
-            name: text,
-            icon: "CheckCircle2",
-          });
-        }
-      }
-    }
-
-    // 3. Fallback to room.features if no building amenities exist in saiyoojyam_building
+    // Fallback to room.features if no building key amenities exist
     if (list.length === 0 && room?.features && room.features.length > 0) {
       return room.features;
     }
 
     return list;
-  }, [building?.amenitiesGrid, building?.featuresList, room?.features]);
+  }, [building?.amenitiesGrid, room?.features]);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-xs">
@@ -191,7 +177,12 @@ export function CheckoutPropertyCard({ building, room }: CheckoutPropertyCardPro
             {room.includesText && (
               <div className="flex items-center gap-2 pt-1 text-xs font-semibold text-emerald-800">
                 <Check className="w-4 h-4 text-emerald-600 stroke-[2.5] shrink-0" />
-                <span>{room.includesText}</span>
+                <span>
+                  {room.includesText.replace(
+                    /Includes 3 Homely Meals & 7:30 AM Tiffin • Daily Housekeeping/gi,
+                    "Includes Breakfast, Lunch & Dinner"
+                  )}
+                </span>
               </div>
             )}
           </div>

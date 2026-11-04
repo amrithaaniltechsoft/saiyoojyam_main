@@ -226,6 +226,7 @@ interface CheckoutGuestFormProps {
   agreed: boolean;
   setAgreed: (v: boolean) => void;
   isSubmitting: boolean;
+  isRedirecting?: boolean;
   totalPrice: number;
   monthlyRent?: number;
   admissionFees?: number;
@@ -270,6 +271,7 @@ export function CheckoutGuestForm({
   agreed,
   setAgreed,
   isSubmitting,
+  isRedirecting = false,
   totalPrice,
   monthlyRent,
   admissionFees = 0,
@@ -365,13 +367,21 @@ export function CheckoutGuestForm({
                 Phone number <span className="text-red-600">*</span>
               </label>
               <input
-                type="tel"
+                type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 required
                 value={phone}
                 onBlur={handlePhoneBlur}
-                onChange={(e) => setPhone(e.target.value)}
+                onWheel={(e) => (e.target as HTMLElement).blur()}
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", "."].includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ""))}
                 placeholder="Phone number"
-                className="w-full h-11 px-3 bg-white border border-gray-400 rounded-md text-sm text-gray-950 placeholder-gray-500 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#FF561C] focus:border-[#FF561C] font-normal"
+                className="w-full h-11 px-3 bg-white border border-gray-400 rounded-md text-sm text-gray-950 placeholder-gray-500 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#FF561C] focus:border-[#FF561C] font-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
 
@@ -381,12 +391,20 @@ export function CheckoutGuestForm({
                 WhatsApp number <span className="text-red-600">*</span>
               </label>
               <input
-                type="tel"
+                type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 required
                 value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
+                onWheel={(e) => (e.target as HTMLElement).blur()}
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", "."].includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                onChange={(e) => setWhatsapp(e.target.value.replace(/[^0-9]/g, ""))}
                 placeholder="WhatsApp number"
-                className="w-full h-11 px-3 bg-white border border-gray-400 rounded-md text-sm text-gray-950 placeholder-gray-500 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#FF561C] focus:border-[#FF561C] font-normal"
+                className="w-full h-11 px-3 bg-white border border-gray-400 rounded-md text-sm text-gray-950 placeholder-gray-500 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#FF561C] focus:border-[#FF561C] font-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>
@@ -435,12 +453,20 @@ export function CheckoutGuestForm({
                 Emergency contact number <span className="text-red-600">*</span>
               </label>
               <input
-                type="tel"
+                type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 required
                 value={contactNumber}
-                onChange={(e) => setContactNumber(e.target.value)}
+                onWheel={(e) => (e.target as HTMLElement).blur()}
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", "."].includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                onChange={(e) => setContactNumber(e.target.value.replace(/[^0-9]/g, ""))}
                 placeholder="Emergency contact number"
-                className="w-full h-11 px-3 bg-white border border-gray-400 rounded-md text-sm text-gray-950 placeholder-gray-500 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#FF561C] focus:border-[#FF561C] font-normal"
+                className="w-full h-11 px-3 bg-white border border-gray-400 rounded-md text-sm text-gray-950 placeholder-gray-500 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#FF561C] focus:border-[#FF561C] font-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>
@@ -570,11 +596,35 @@ export function CheckoutGuestForm({
             ) : (
               <button
                 type="submit"
-                disabled={isSubmitting || isCheckingAvailability}
-                className="w-full sm:w-auto min-w-[200px] px-8 py-3 bg-[#FF561C] hover:bg-[#e0450d] text-white font-semibold rounded-md text-sm sm:text-base shadow-md shadow-orange-500/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 shrink-0"
+                disabled={isSubmitting || isRedirecting || isCheckingAvailability}
+                className={`w-full sm:w-auto min-w-[200px] px-8 py-3 font-semibold rounded-md text-sm sm:text-base shadow-md transition-all flex items-center justify-center gap-2 shrink-0 select-none ${
+                  isSubmitting || isRedirecting || isCheckingAvailability
+                    ? "bg-gray-400 text-white cursor-not-allowed pointer-events-none opacity-70 shadow-none"
+                    : "bg-[#FF561C] hover:bg-[#e0450d] text-white shadow-orange-500/20 active:scale-95 cursor-pointer"
+                }`}
               >
-                <Lock className="w-4 h-4 text-white" />
-                <span>{isSubmitting ? "Processing..." : "Make payment"}</span>
+                {isRedirecting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Booking Confirmed! Redirecting...</span>
+                  </>
+                ) : isSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Processing Payment...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 text-white" />
+                    <span>{isCheckingAvailability ? "Checking..." : "Make payment"}</span>
+                  </>
+                )}
               </button>
             )}
             <span className="text-[11px] text-gray-500 text-center sm:text-right font-medium">

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { BuildingDetailData } from "@/data/buildingsData";
 import { RoomItem } from "@/data/roomsData";
 import { CheckoutGuestForm } from "@/components/checkout/CheckoutGuestForm";
-import { CheckoutSuccessModal } from "@/components/checkout/CheckoutSuccessCard";
 import { LoginModal } from "@/components/global/LoginModal";
 import { ArrowDown } from "lucide-react";
 
@@ -51,9 +50,8 @@ export function CheckoutBookingSection({
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [bookingUid, setBookingUid] = useState<string>("");
-  const [invoiceData, setInvoiceData] = useState<any>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   // Authentication states
   const [currentUser, setCurrentUser] = useState<string | null>(null);
@@ -157,7 +155,10 @@ export function CheckoutBookingSection({
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Guest booking allowed without pre-login
+    // 1. Guard against double submission (synchronous ref check)
+    if (isSubmittingRef.current || isSubmitting || isRedirecting) {
+      return;
+    }
 
     // 2. Check verification agreement
     if (!agreed) {
@@ -174,6 +175,8 @@ export function CheckoutBookingSection({
       return;
     }
 
+    // Immediately disable the button and set ref
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
 
     const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost/saiyoojyam";
@@ -224,22 +227,24 @@ export function CheckoutBookingSection({
     })
       .then((res) => res.json())
       .then((json) => {
-        setIsSubmitting(false);
         if (json && json.status) {
+          const uid = json.data?.inmates_uid || "";
+          const inv = json.data?.invoice
+            ? {
+                ...json.data.invoice,
+                inmates_id: json.data.inmates_id,
+                print_url: json.data.api_print_url || json.data.print_url,
+                receipt_url: json.data.receipt_url,
+              }
+            : null;
+
           const successPayload = {
             name,
             building,
             room,
             checkInDate: checkInParam,
-            bookingUid: json.data?.inmates_uid || "",
-            invoiceData: json.data?.invoice
-              ? {
-                  ...json.data.invoice,
-                  inmates_id: json.data.inmates_id,
-                  print_url: json.data.api_print_url || json.data.print_url,
-                  receipt_url: json.data.receipt_url,
-                }
-              : null,
+            bookingUid: uid,
+            invoiceData: inv,
           };
 
           try {
@@ -249,15 +254,30 @@ export function CheckoutBookingSection({
             console.error("Failed to store payment success in sessionStorage:", e);
           }
 
+          // Keep button disabled and indicate redirect
+          setIsRedirecting(true);
+
           // Redirect to home page where the success modal is presented
           router.push("/");
+          setTimeout(() => {
+            if (typeof window !== "undefined" && window.location.pathname !== "/") {
+              window.location.href = "/";
+            }
+          }, 1200);
         } else {
+          // Re-enable button on error so user can fix and retry
+          isSubmittingRef.current = false;
+          setIsSubmitting(false);
+          setIsRedirecting(false);
           alert(json?.message || "Failed to submit booking. Please try again.");
         }
       })
       .catch((err) => {
         console.error("Booking submission error:", err);
+        // Re-enable button on error so user can retry
+        isSubmittingRef.current = false;
         setIsSubmitting(false);
+        setIsRedirecting(false);
         alert("Failed to submit booking. Please try again.");
       });
   };
@@ -334,6 +354,7 @@ export function CheckoutBookingSection({
         agreed={agreed}
         setAgreed={setAgreed}
         isSubmitting={isSubmitting}
+        isRedirecting={isRedirecting}
         totalPrice={totalPrice}
         monthlyRent={monthlyRent}
         admissionFees={admissionFees}
@@ -363,18 +384,6 @@ export function CheckoutBookingSection({
           setLoginError(null);
           setIsLoginModalOpen(false);
         }}
-      />
-
-      {/* Modal Overlay for Confirmation */}
-      <CheckoutSuccessModal
-        isOpen={isSuccess}
-        onClose={() => setIsSuccess(false)}
-        name={name}
-        building={building}
-        room={room}
-        checkInDate={checkInParam}
-        bookingUid={bookingUid}
-        invoiceData={invoiceData}
       />
 
       {/* Mobile/Tablet: Center Bottom Floating Redirect Button to "Enter Details" (hidden once user reaches form) */}

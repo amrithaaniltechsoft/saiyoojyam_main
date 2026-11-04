@@ -31,7 +31,7 @@ export interface RoomItem {
     name: string;
     icon: string; // icon name key
   }[];
-  includesText: string; // e.g. "Includes 3 Meals & 7:30 AM Tiffin • Daily Housekeeping"
+  includesText: string; // e.g. "Includes Breakfast, Lunch & Dinner"
   rentMonthly: string; // e.g. "15,000"
   rentPriceRange?: string; // e.g. "14,000 – 16,000"
   rentPriceSub: string; // e.g. "(AF ₹1k + CD ₹10k)"
