@@ -225,7 +225,13 @@ export function SearchResultsView({
 
   // Combined & Filtered rooms calculation
   const filteredRooms = useMemo(() => {
-    const allFilters = [...PREMIER_FILTERS, ...ANNEX_FILTERS, ...TOWERS_FILTERS];
+    const flatDynamicFilters = Object.values(dynamicCategories).flat();
+    const allFilters = [
+      ...flatDynamicFilters,
+      ...PREMIER_FILTERS,
+      ...ANNEX_FILTERS,
+      ...TOWERS_FILTERS,
+    ];
     const activeTowerObj = selectedTowerFilter
       ? allFilters.find((f) => f.id === selectedTowerFilter)
       : null;
@@ -302,6 +308,15 @@ export function SearchResultsView({
       }
 
       // 3. Category sidebar filter match
+      if (selectedTowerFilter && selectedTowerFilter !== "all") {
+        if (room.roomTypeSlug && room.roomTypeSlug === selectedTowerFilter) {
+          return true;
+        }
+        if (room.roomTypeSlug && selectedTowerFilter.includes("-share") && room.roomTypeSlug !== selectedTowerFilter) {
+          return false;
+        }
+      }
+
       if (activeTowerObj) {
         if (activeTowerObj.building && room.buildingKey !== activeTowerObj.building) {
           return false;
@@ -351,7 +366,7 @@ export function SearchResultsView({
 
       return true;
     });
-  }, [apiRooms, selectedLocation, selectedRoomType, selectedTowerFilter]);
+  }, [apiRooms, selectedLocation, selectedRoomType, selectedTowerFilter, dynamicCategories]);
 
   // All rooms available in the selected building across all sharing types
   const allBuildingRooms = useMemo(() => {
