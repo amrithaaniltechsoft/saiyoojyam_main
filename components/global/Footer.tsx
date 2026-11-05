@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Phone, Star, ArrowUp } from "lucide-react";
 
 function WhatsAppIcon({ className = "w-5 h-5 text-white" }: { className?: string }) {
@@ -201,9 +202,9 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
             <span>© 2025 Saiyoojyam Premier Ladies Hostel. All rights reserved.</span>
             <span className="hidden sm:inline">•</span>
-            <a href="#" className="hover:text-white transition-colors underline underline-offset-4">
-              Terms of Stay
-            </a>
+            <Link href="/terms" className="hover:text-white transition-colors underline underline-offset-4">
+              Terms &amp; Conditions
+            </Link>
           </div>
 
           {/* Techsoft Agency Link */}

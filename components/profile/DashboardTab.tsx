@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   User,
   CreditCard,
@@ -11,9 +12,10 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import type { ProfileTab } from "./ProfileHeroHeader";
-import type { DashboardData } from "./types";
+import type { DashboardData, DashboardTerm } from "./types";
 
 interface DashboardTabProps {
   userName: string;
@@ -37,6 +39,59 @@ export function DashboardTab({
   const totalPendingAmount = dashboardData?.total_pending_amount || currentBill?.total_payable || "₹0.00";
   const isAllPaid = dashboardData?.is_all_paid ?? (pendingCount === 0);
   const invoices = dashboardData?.invoices || [];
+
+  const [dynamicTerms, setDynamicTerms] = useState<DashboardTerm[]>([]);
+  const [loadingTerms, setLoadingTerms] = useState<boolean>(false);
+
+  useEffect(() => {
+    // If dashboardData already contains terms from the API, use them
+    if (dashboardData?.terms && dashboardData.terms.length > 0) {
+      setDynamicTerms(dashboardData.terms);
+      return;
+    }
+
+    // Otherwise, dynamically fetch the published terms from /api/terms
+    let isMounted = true;
+    async function fetchTerms() {
+      try {
+        setLoadingTerms(true);
+        const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost/saiyoojyam";
+        const baseUrl = rawApiUrl.replace(/\/+$/, "");
+        const res = await fetch(`${baseUrl}/api/terms`, { cache: "no-store" });
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.status) {
+            let list: DashboardTerm[] = [];
+            if (Array.isArray(json.list) && json.list.length > 0) {
+              list = json.list;
+            } else if (json.data && json.data.title) {
+              list = [json.data];
+            }
+            if (isMounted) {
+              setDynamicTerms(list);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch terms for dashboard:", err);
+      } finally {
+        if (isMounted) {
+          setLoadingTerms(false);
+        }
+      }
+    }
+
+    fetchTerms();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dashboardData?.terms]);
+
+  const termsToShow =
+    dashboardData?.terms && dashboardData.terms.length > 0
+      ? dashboardData.terms
+      : dynamicTerms;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -252,23 +307,44 @@ export function DashboardTab({
                 </div>
               </div>
               <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[10px] sm:text-[11px] font-medium">
-                Active Policy
+                {termsToShow.length > 0
+                  ? `${termsToShow.length} Active ${termsToShow.length === 1 ? "Policy" : "Policies"}`
+                  : "Active Policy"}
               </span>
             </div>
 
             <div className="space-y-2.5 pt-4 text-xs sm:text-sm text-gray-600">
-              <div className="flex items-start gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#FF561C] mt-1.5 shrink-0" />
-                <span>Rent must be settled on or before the 5th of every month.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#FF561C] mt-1.5 shrink-0" />
-                <span>Hostel gates close at 10:00 PM for resident safety.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#FF561C] mt-1.5 shrink-0" />
-                <span>30 days notice required prior to vacating room.</span>
-              </div>
+              {loadingTerms && termsToShow.length === 0 ? (
+                <div className="py-4 flex items-center justify-center gap-2 text-gray-400 text-xs">
+                  <Loader2 className="w-4 h-4 animate-spin text-[#FF561C]" />
+                  <span>Loading policies...</span>
+                </div>
+              ) : termsToShow.length > 0 ? (
+                termsToShow.map((term, idx) => (
+                  <div
+                    key={term.id || idx}
+                    onClick={() => onNavigateTab("terms")}
+                    className="flex items-start gap-2.5 group cursor-pointer p-1.5 -mx-1.5 rounded-lg hover:bg-orange-50/60 transition-colors"
+                    title={term.title}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#FF561C] mt-2 shrink-0 group-hover:scale-125 transition-transform" />
+                    <div className="min-w-0 flex-1">
+                      <span className="font-semibold text-gray-900 group-hover:text-[#FF561C] transition-colors line-clamp-1 block text-xs sm:text-sm">
+                        {term.title}
+                      </span>
+                      {term.small_description && (
+                        <p className="text-[11px] sm:text-xs text-gray-500 line-clamp-1 mt-0.5">
+                          {term.small_description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-4 text-center text-xs text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                  <span>Hostel policies will be published shortly.</span>
+                </div>
+              )}
             </div>
           </div>
 

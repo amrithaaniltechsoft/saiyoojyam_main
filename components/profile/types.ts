@@ -67,6 +67,16 @@ export interface DashboardInvoice {
   print_url: string;
 }
 
+export interface DashboardTerm {
+  id: number | string;
+  title: string;
+  small_description?: string;
+  desc?: string;
+  pdf_file?: string | null;
+  pdf_url?: string;
+  download_url?: string;
+}
+
 export interface DashboardData {
   inmate: DashboardInmate;
   current_bill: DashboardCurrentBill;
@@ -76,5 +86,6 @@ export interface DashboardData {
   total_pending_amount_num?: number;
   is_all_paid?: boolean;
   invoices: DashboardInvoice[];
+  terms?: DashboardTerm[];
   print_url: string;
 }
