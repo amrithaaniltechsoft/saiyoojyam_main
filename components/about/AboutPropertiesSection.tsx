@@ -1,77 +1,111 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Building2, ArrowRight } from "lucide-react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/pagination";
+import { PropertiesCarousel, PropertySlide } from "./PropertiesCarousel";
 
-export function AboutPropertiesSection() {
-  const [networkData, setNetworkData] = useState<{
-    subtitle: string;
-    title: string;
-    raw_desc: string;
-    description: string;
-    images: Array<{ image: string; name?: string; tagline?: string }>;
-    loaded: boolean;
-  }>({
-    subtitle: "",
-    title: "",
-    raw_desc: "",
-    description: "",
-    images: [],
-    loaded: false,
-  });
+export interface PropertyBuilding {
+  id: number | string;
+  name: string;
+  building_name?: string;
+  slug: string;
+  tagline?: string;
+  location?: string;
+  image?: string;
+}
 
-  useEffect(() => {
-    const rawApiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost/saiyoojyam";
-    const baseUrl = rawApiUrl.replace(/\/+$/, "");
+interface NetworkData {
+  subtitle: string;
+  title: string;
+  raw_desc: string;
+  description: string;
+  images: PropertySlide[];
+  buildings: PropertyBuilding[];
+}
 
-    fetch(`${baseUrl}/api/about`, { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (json && json.status && json.data && json.data.network) {
-          const net = json.data.network;
-          setNetworkData({
-            subtitle: net.subtitle?.trim() || "",
-            title: net.title?.trim() || "",
-            raw_desc:
-              net.raw_desc?.trim() ||
-              net.description?.trim() ||
-              "",
-            description: net.description?.trim() || "",
-            images: Array.isArray(net.images) ? net.images : [],
-            loaded: true,
-          });
-        } else {
-          setNetworkData((prev) => ({ ...prev, loaded: true }));
-        }
-      })
-      .catch((err) => {
-        console.warn("Could not fetch network data:", err);
-        setNetworkData((prev) => ({ ...prev, loaded: true }));
-      });
-  }, []);
+async function getNetworkAndBuildings(): Promise<NetworkData | null> {
+  const rawApiUrl =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost/saiyoojyam";
+  const baseUrl = rawApiUrl.replace(/\/+$/, "");
 
-  if (!networkData.loaded) {
-    return null;
+  let aboutData: any = null;
+  let buildingsList: PropertyBuilding[] = [];
+
+  try {
+    const [aboutRes, buildingRes] = await Promise.all([
+      fetch(`${baseUrl}/api/about`, { cache: "no-store" }).catch(() => null),
+      fetch(`${baseUrl}/api/building`, { cache: "no-store" }).catch(() => null),
+    ]);
+
+    if (aboutRes && aboutRes.ok) {
+      const json = await aboutRes.json();
+      if (json?.status && json?.data?.network) {
+        aboutData = json.data.network;
+      }
+    }
+
+    if (buildingRes && buildingRes.ok) {
+      const bJson = await buildingRes.json();
+      if (bJson?.status && Array.isArray(bJson.data)) {
+        buildingsList = bJson.data.map((item: any) => ({
+          id: item.id || item.building_id,
+          name: item.name || item.building_name || "",
+          building_name: item.building_name || item.name || "",
+          slug: item.slug || `building-${item.id || item.building_id}`,
+          tagline: item.tagline || item.building_tagline || "",
+          location: item.location || item.address || "",
+          image: item.mainImage || item.building_image || "",
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn("Could not fetch network data:", err);
   }
 
+  // If aboutData returned buildings from saiyoojyam_building, use them or fallback
+  const finalBuildings =
+    Array.isArray(aboutData?.buildings) && aboutData.buildings.length > 0
+      ? aboutData.buildings
+      : buildingsList;
+
+  let images: PropertySlide[] = Array.isArray(aboutData?.images) ? aboutData.images : [];
+  if (images.length === 0 && finalBuildings.length > 0) {
+    images = finalBuildings
+      .filter((b: PropertyBuilding) => Boolean(b.image))
+      .map((b: PropertyBuilding) => ({
+        image: b.image!,
+        name: b.building_name || b.name,
+        tagline: b.tagline || b.location,
+      }));
+  }
+
+  return {
+    subtitle: aboutData?.subtitle?.trim() || "Our Properties",
+    title: aboutData?.title?.trim() || "Saiyoojyam Hostels Network",
+    raw_desc:
+      aboutData?.raw_desc?.trim() ||
+      aboutData?.description?.trim() ||
+      "",
+    description: aboutData?.description?.trim() || "",
+    images,
+    buildings: finalBuildings,
+  };
+}
+
+export async function AboutPropertiesSection() {
+  const data = await getNetworkAndBuildings();
+  if (!data) return null;
+
   const hasContent =
-    Boolean(networkData.title) ||
-    Boolean(networkData.raw_desc) ||
-    Boolean(networkData.description) ||
-    networkData.images.length > 0;
+    Boolean(data.title) ||
+    Boolean(data.raw_desc) ||
+    Boolean(data.description) ||
+    data.buildings.length > 0 ||
+    data.images.length > 0;
 
   if (!hasContent) {
     return null;
   }
 
-  const hasImages = networkData.images.length > 0;
+  const hasImages = data.images.length > 0;
 
   return (
     <section className="w-full py-12 sm:py-20 bg-white">
@@ -87,104 +121,53 @@ export function AboutPropertiesSection() {
                 hasImages ? "lg:col-span-7" : "lg:col-span-12"
               } flex flex-col justify-center space-y-4 sm:space-y-5 lg:pr-4 order-2 lg:order-1`}
             >
-              {networkData.subtitle && (
+              {data.subtitle && (
                 <span className="text-xs sm:text-sm font-bold text-[#FF561C]">
-                  {networkData.subtitle}
+                  {data.subtitle}
                 </span>
               )}
-              {networkData.title && (
+              {data.title && (
                 <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold font-heading text-gray-950 leading-tight">
-                  {networkData.title}
+                  {data.title}
                 </h2>
               )}
-              {networkData.raw_desc ? (
+              {data.raw_desc ? (
                 <div
                   className="space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed font-normal [&>p]:mb-3 [&>p:last-child]:mb-0 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5"
-                  dangerouslySetInnerHTML={{ __html: networkData.raw_desc }}
+                  dangerouslySetInnerHTML={{ __html: data.raw_desc }}
                 />
-              ) : networkData.description ? (
+              ) : data.description ? (
                 <div className="space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed font-normal">
-                  <p>{networkData.description}</p>
+                  <p>{data.description}</p>
                 </div>
               ) : null}
 
-              {/* Property Quick Pills */}
-              <div className="pt-2 flex flex-wrap gap-2 sm:gap-3">
-                <Link
-                  href="/building/towers"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-orange-200 text-xs sm:text-sm font-semibold text-gray-900 hover:border-[#FF561C] hover:text-[#FF561C] transition-colors"
-                >
-                  <Building2 className="w-4 h-4 text-[#FF561C]" />
-                  <span>Saiyoojyam Towers</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-                <Link
-                  href="/building/premier"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-orange-200 text-xs sm:text-sm font-semibold text-gray-900 hover:border-[#FF561C] hover:text-[#FF561C] transition-colors"
-                >
-                  <Building2 className="w-4 h-4 text-[#FF561C]" />
-                  <span>Saiyoojyam Premier</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-                <Link
-                  href="/building/annex"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-orange-200 text-xs sm:text-sm font-semibold text-gray-900 hover:border-[#FF561C] hover:text-[#FF561C] transition-colors"
-                >
-                  <Building2 className="w-4 h-4 text-[#FF561C]" />
-                  <span>Saiyoojyam Annex</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
+              {/* Property Quick Pills (dynamically fetched from saiyoojyam_building) */}
+              {data.buildings.length > 0 && (
+                <div className="pt-2 flex flex-wrap gap-2 sm:gap-3">
+                  {data.buildings.map((building) => {
+                    const displayName = building.building_name || building.name;
+                    const slug = building.slug || `building-${building.id}`;
+                    return (
+                      <Link
+                        key={building.id || slug}
+                        href={`/building/${slug}`}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-orange-200 text-xs sm:text-sm font-semibold text-gray-900 hover:border-[#FF561C] hover:text-[#FF561C] transition-colors shadow-2xs group"
+                      >
+                        <Building2 className="w-4 h-4 text-[#FF561C] group-hover:scale-110 transition-transform" />
+                        <span>{displayName}</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#FF561C] group-hover:translate-x-0.5 transition-all" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* Right Carousel: Only renders if images exist in database */}
+            {/* Right Carousel: Only renders if images exist */}
             {hasImages && (
               <div className="lg:col-span-5 relative order-1 lg:order-2">
-                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-lg border border-gray-100 group">
-                  <Swiper
-                    modules={[Autoplay, Pagination]}
-                    autoplay={{
-                      delay: 3500,
-                      disableOnInteraction: false,
-                    }}
-                    pagination={{
-                      clickable: true,
-                      bulletClass:
-                        "inline-block w-2 h-2 rounded-full bg-white/70 mx-1 transition-all cursor-pointer",
-                      bulletActiveClass: "!w-5 !bg-[#FF561C] !rounded-full",
-                    }}
-                    loop={networkData.images.length > 1}
-                    className="w-full h-full relative [&_.swiper-pagination]:!text-right [&_.swiper-pagination]:!pr-4 [&_.swiper-pagination]:!bottom-3"
-                  >
-                    {networkData.images.map((slide, idx) => (
-                      <SwiperSlide key={idx} className="relative w-full h-full">
-                        <Image
-                          src={slide.image}
-                          alt={slide.name || "Saiyoojyam Property"}
-                          fill
-                          sizes="(max-width: 1024px) 100vw, 40vw"
-                          className="object-cover"
-                          unoptimized={slide.image.startsWith("http")}
-                        />
-                        {/* Caption Overlay if name/tagline provided */}
-                        {(slide.name || slide.tagline) && (
-                          <div className="absolute inset-x-0 bottom-0 pb-6 pt-10 px-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white flex flex-col justify-end">
-                            {slide.name && (
-                              <span className="text-xs sm:text-sm font-semibold tracking-wide text-white">
-                                {slide.name}
-                              </span>
-                            )}
-                            {slide.tagline && (
-                              <span className="text-[11px] text-gray-300 font-normal">
-                                {slide.tagline}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </SwiperSlide>
-                    ))}
-                  </Swiper>
-                </div>
+                <PropertiesCarousel slides={data.images} />
               </div>
             )}
           </div>
