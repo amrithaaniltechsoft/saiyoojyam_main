@@ -1,13 +1,29 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/global/Header";
 import { Footer } from "@/components/global/Footer";
+import { constructMetadata, constructMetadataById } from "@/lib/seo";
 import Link from "next/link";
 import { ShieldCheck, CheckCircle2, ChevronRight, Home } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "Terms and Conditions of Hostel Accommodation | Saiyoojyam Ladies Hostels",
-  description: "Official rules of stay, code of conduct, payment terms, and policies for residents at Saiyoojyam Ladies Hostels.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  // Fetch meta_title, meta_desc, and meta_key_word from saiyoojyam_seo table (id = 15, page = 'Terms and condition')
+  const meta = await constructMetadataById(15);
+  if (meta && (meta.title || meta.description || meta.keywords)) {
+    return meta;
+  }
+
+  const byPage = await constructMetadata("Terms and condition");
+  if (byPage && (byPage.title || byPage.description || byPage.keywords)) {
+    return byPage;
+  }
+
+  return {
+    title: "Terms and Conditions of Hostel Accommodation | Saiyoojyam Ladies Hostels",
+    description:
+      "Official rules of stay, code of conduct, payment terms, and policies for residents at Saiyoojyam Ladies Hostels.",
+    keywords: "terms and conditions, hostel rules, saiyoojyam accommodation policy, kakkanad hostel guidelines",
+  };
+}
 
 interface TermsPayload {
   title: string;
