@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Header } from "@/components/global/Header";
 import { Footer } from "@/components/global/Footer";
 import { constructMetadata, constructMetadataById } from "@/lib/seo";
@@ -93,42 +94,84 @@ export default async function TermsPage() {
       {/* Global Header */}
       <Header />
 
-      <main className="w-full flex-grow pt-20 sm:pt-24 pb-16">
-        {/* Breadcrumb & Header Banner */}
-        <section className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 text-white py-12 sm:py-16 px-4 sm:px-6 shadow-md relative overflow-hidden">
-          <div className="max-w-4xl mx-auto text-center relative z-10">
-            {/* Breadcrumb */}
-            <div className="flex items-center justify-center gap-2 text-xs text-white/80 mb-3 font-medium">
-              <Link href="/" className="hover:text-white flex items-center gap-1 transition-colors">
+      <main className="w-full flex-grow pt-0 pb-16">
+        {/* Photographic Hero Banner */}
+        <section className="relative w-full min-h-[380px] sm:min-h-[440px] lg:min-h-[480px] flex items-end justify-start overflow-hidden bg-gray-950 text-white">
+          {/* Background Banner Image */}
+          <Image
+            src="/home-hero/h1.png"
+            alt="Saiyoojyam Ladies Hostels Terms and Conditions of Stay"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center opacity-40 scale-105 transition-transform duration-1000"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
+
+          {/* Decorative Warm Ambient Glow */}
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#FF561C]/20 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 max-w-4xl mx-auto w-full px-4 sm:px-6 pb-14 sm:pb-16 pt-28 text-left flex flex-col items-start justify-end gap-3 sm:gap-4">
+            {/* Breadcrumb Navigation */}
+            <nav
+              aria-label="Breadcrumb"
+              className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-300 font-medium"
+            >
+              <Link href="/" className="hover:text-white transition-colors flex items-center gap-1">
                 <Home className="w-3.5 h-3.5" />
                 <span>Home</span>
               </Link>
-              <ChevronRight className="w-3.5 h-3.5 text-white/60" />
-              <span className="text-white font-semibold">Terms &amp; Conditions</span>
-            </div>
+              <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-[#FF561C] font-semibold">Terms &amp; Conditions</span>
+            </nav>
 
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 border border-white/25">
-              <ShieldCheck className="w-4 h-4 text-white" />
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF561C]/20 border border-[#FF561C]/40 text-[#ffd7a8] text-xs sm:text-sm font-medium tracking-wide">
+              <ShieldCheck className="w-4 h-4 text-[#FF561C]" />
               <span>Hostel Regulations &amp; Stay Policy</span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3">
-              {terms.title}
+            {/* Heading */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-heading text-white font-semibold leading-[1.15] max-w-4xl tracking-tight">
+              Terms &amp;{" "}
+              <span className="relative inline-block mt-0.5">
+                <span className="courgette-regular text-orange-200 font-normal tracking-wide text-[0.95em]">
+                  Conditions
+                </span>
+                <svg
+                  className="absolute left-0 -bottom-1.5 sm:-bottom-2 w-full h-2.5 sm:h-3.5 overflow-visible pointer-events-none"
+                  viewBox="0 0 100 12"
+                  preserveAspectRatio="none"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M2 9.5 C 25 2.5, 75 2, 98 8 C 80 11.5, 45 11, 28 9"
+                    stroke="#ffd7a8"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    pathLength="100"
+                  />
+                </svg>
+              </span>
             </h1>
-            <p className="text-white/95 text-xs sm:text-base max-w-2xl mx-auto leading-relaxed font-medium">
+
+            {/* Subtitle */}
+            <p className="text-sm sm:text-base lg:text-lg text-gray-200 max-w-2xl font-normal leading-relaxed">
               Official code of conduct, fee settlements, room guidelines, and stay regulations for all residents of Saiyoojyam Ladies Hostels.
             </p>
 
             {clauses.length > 0 && (
-              <div className="mt-4 inline-block bg-white text-orange-600 text-xs font-bold px-3.5 py-1 rounded-full shadow-sm">
-                {clauses.length} Accommodation Rules
+              <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/20 text-orange-200 text-xs font-semibold px-3 py-1 rounded-md mt-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#FF561C]" />
+                <span>{clauses.length} Accommodation Rules</span>
               </div>
             )}
           </div>
         </section>
 
         {/* Content Section */}
-        <section className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 relative z-20">
+        <section className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 sm:-mt-10 relative z-20">
           <div className="bg-white rounded-2xl shadow-xl p-5 sm:p-10 border border-gray-200/80 space-y-8">
             {/* Header intro */}
             <div className="border-b border-gray-100 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
