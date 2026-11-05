@@ -1,6 +1,3 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -25,64 +22,78 @@ interface CtaData {
   whatsapp_button_text: string;
   secondary_button_text: string;
   secondary_button_link: string;
-  loaded: boolean;
 }
 
-export function AboutCtaSection() {
-  const [data, setData] = useState<CtaData>({
-    title: "",
-    description: "",
-    image: "",
-    whatsapp_number: "",
-    whatsapp_button_text: "",
-    secondary_button_text: "",
-    secondary_button_link: "",
-    loaded: false,
-  });
+async function getCtaData(): Promise<CtaData | null> {
+  const rawApiUrl =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost/saiyoojyam";
+  const baseUrl = rawApiUrl.replace(/\/+$/, "");
 
-  useEffect(() => {
-    const rawApiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost/saiyoojyam";
-    const baseUrl = rawApiUrl.replace(/\/+$/, "");
+  try {
+    const [aboutRes, contactRes] = await Promise.all([
+      fetch(`${baseUrl}/api/about`, { cache: "no-store" }).catch(() => null),
+      fetch(`${baseUrl}/api/contact`, { cache: "no-store" }).catch(() => null),
+    ]);
 
-    fetch(`${baseUrl}/api/about`, { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (json && json.status && json.data && json.data.cta) {
-          const c = json.data.cta;
-          let imageUrl = c.image || "";
-          if (!imageUrl && c.image_name) {
-            imageUrl = `${baseUrl}/uploads/about/${c.image_name}`;
-          }
-          setData({
-            title: c.title?.trim() || "",
-            description: c.description?.trim() || "",
-            image: imageUrl,
-            whatsapp_number: c.whatsapp_number?.trim() || "",
-            whatsapp_button_text: c.whatsapp_button_text?.trim() || "",
-            secondary_button_text: c.secondary_button_text?.trim() || "",
-            secondary_button_link: c.secondary_button_link?.trim() || "",
-            loaded: true,
-          });
-        } else {
-          setData((prev) => ({ ...prev, loaded: true }));
-        }
-      })
-      .catch((err) => {
-        console.warn("Could not fetch CTA data:", err);
-        setData((prev) => ({ ...prev, loaded: true }));
-      });
-  }, []);
+    let c: any = null;
+    if (aboutRes && aboutRes.ok) {
+      const aboutJson = await aboutRes.json();
+      if (aboutJson?.status && aboutJson?.data?.cta) {
+        c = aboutJson.data.cta;
+      }
+    }
 
-  if (!data.loaded) {
+    // Directly fetch and prioritize WhatsApp number from saiyoojyam_contact table
+    let contactWhatsapp = "";
+    if (contactRes && contactRes.ok) {
+      const contactJson = await contactRes.json();
+      if (contactJson?.status && contactJson?.data) {
+        contactWhatsapp = contactJson.data.whatsapp_clean || contactJson.data.clean_phone || "";
+      }
+    }
+
+    if (!c && !contactWhatsapp) {
+      return null;
+    }
+
+    let imageUrl = c?.image || "";
+    if (!imageUrl && c?.image_name) {
+      imageUrl = `${baseUrl}/uploads/about/${c.image_name}`;
+    }
+
+    // Number strictly from saiyoojyam_contact table
+    const whatsappNum =
+      contactWhatsapp ||
+      c?.contact_whatsapp?.trim() ||
+      c?.whatsapp_number?.trim() ||
+      "918129339122";
+
+    return {
+      title: c?.title?.trim() || "Looking for a comfortable home in Kakkanad?",
+      description:
+        c?.description?.trim() ||
+        "Connect with our team to inquire about room availability, schedule a campus visit, or book your accommodation.",
+      image: imageUrl,
+      whatsapp_number: whatsappNum,
+      whatsapp_button_text: c?.whatsapp_button_text?.trim() || "Enquire via WhatsApp",
+      secondary_button_text: c?.secondary_button_text?.trim() || "Explore Rooms",
+      secondary_button_link: c?.secondary_button_link?.trim() || "/search",
+    };
+  } catch (err) {
+    console.warn("Could not fetch CTA data:", err);
     return null;
   }
+}
 
-  // Only render if there is actual content from database (no fallback dummy content)
+export async function AboutCtaSection() {
+  const data = await getCtaData();
+  if (!data) return null;
+
   if (!data.title && !data.description && !data.image) {
     return null;
   }
 
+  // Use WhatsApp number from saiyoojyam_contact
   const rawNum = data.whatsapp_number || "918129339122";
   const whatsappNum = rawNum.replace(/\D/g, "");
   const whatsappUrl = `https://wa.me/${whatsappNum || "918129339122"}?text=${encodeURIComponent("Hello Saiyoojyam Management, I would like to enquire about hostel accommodation.")}`;
