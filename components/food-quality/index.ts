@@ -1,3 +1,8 @@
+export {
+  WeeklyMenuTimetable,
+  type WeeklyDayMenu,
+  DEFAULT_WEEKLY_MENU,
+} from "./WeeklyMenuTimetable";
 export { FoodQualityHero, type FoodHeroData } from "./FoodQualityHero";
 export {
   FoodQualityPillars,

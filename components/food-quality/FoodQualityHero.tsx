@@ -19,7 +19,7 @@ export function FoodQualityHero({ data }: FoodQualityHeroProps) {
   const description =
     data?.description ||
     "Good health begins with pure, comforting food. At Saiyoojyam Hostels, our meals are freshly cooked with motherly care, zero artificial taste enhancers, and delivered punctually to match the demanding schedules of IT professionals and students near Kakkanad.";
-  const heroImage = data?.image || "/why-us/food-quality.png";
+  const heroImage = "/home-hero/h1.png";
 
   return (
     <section className="relative w-full min-h-[400px] sm:min-h-[460px] lg:min-h-[500px] flex items-end justify-start overflow-hidden bg-gray-950 text-white">

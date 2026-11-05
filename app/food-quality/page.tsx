@@ -4,26 +4,15 @@ import { Footer } from "@/components/global/Footer";
 import { constructMetadataById } from "@/lib/seo";
 import {
   FoodQualityHero,
-  FoodQualityPillars,
-  DailyMealSchedule,
-  KitchenGallery,
-  FoodQualityFaq,
-  FoodQualityCta,
-  FoodHeroData,
-  FoodPillarsData,
-  FoodMenuData,
-  FoodGalleryData,
-  FoodFaqData,
-  FoodCtaData,
+  type FoodHeroData,
+  WeeklyMenuTimetable,
+  type WeeklyDayMenu,
+  DEFAULT_WEEKLY_MENU,
 } from "@/components/food-quality";
 
 interface FoodQualityPageData {
   hero?: FoodHeroData;
-  pillars?: FoodPillarsData;
-  menu?: FoodMenuData;
-  gallery?: FoodGalleryData;
-  faqs?: FoodFaqData;
-  cta?: FoodCtaData;
+  weeklySchedule?: WeeklyDayMenu[];
 }
 
 async function getFoodQualityData(): Promise<FoodQualityPageData> {
@@ -39,19 +28,37 @@ async function getFoodQualityData(): Promise<FoodQualityPageData> {
     if (res.ok) {
       const json = await res.json();
       if (json && json.status && json.data) {
-        return json.data;
+        const schedule =
+          json.data.menu?.weeklySchedule ||
+          json.data.weeklySchedule ||
+          [];
+        return {
+          hero: json.data.hero,
+          weeklySchedule: schedule.length > 0 ? schedule : DEFAULT_WEEKLY_MENU,
+        };
       }
     }
   } catch (err) {
     console.warn("Could not fetch food quality data from API:", err);
   }
 
-  return {};
+  return {
+    weeklySchedule: DEFAULT_WEEKLY_MENU,
+  };
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   // Fetch meta title, meta description, and meta keyword from saiyoojyam_seo table where id = 4
-  return constructMetadataById(4);
+  const meta = await constructMetadataById(4);
+  if (meta && (meta.title || meta.description || meta.keywords)) {
+    return meta;
+  }
+
+  return {
+    title: "Food Quality & Weekly Menu | Saiyoojyam Ladies Hostels",
+    description:
+      "Homely, hygienic, and nutritious 7-day meal menu timetable served punctually across Saiyoojyam Hostels Kakkanad.",
+  };
 }
 
 export default async function FoodQualityPage() {
@@ -62,24 +69,12 @@ export default async function FoodQualityPage() {
       {/* Global Header */}
       <Header />
 
-      <main className="w-full flex-grow pt-0">
+      <main className="w-full flex-grow pt-0 pb-12 sm:pb-16">
         {/* 1. Hero Banner */}
-        <FoodQualityHero data={data.hero} />
+        <FoodQualityHero data={{ ...data.hero, image: "/home-hero/h1.png" }} />
 
-        {/* 2. Four Quality Pillars */}
-        <FoodQualityPillars data={data.pillars} />
-
-        {/* 3. Daily Meal Timings & Sample Menu */}
-        <DailyMealSchedule data={data.menu} />
-
-        {/* 4. Dining & Kitchen Visual Gallery */}
-        <KitchenGallery data={data.gallery} />
-
-        {/* 5. Frequently Asked Questions */}
-        <FoodQualityFaq data={data.faqs} />
-
-        {/* 6. WhatsApp & Booking Call-to-Action */}
-        <FoodQualityCta data={data.cta} />
+        {/* 2. Weekly Menu Timetable Matrix */}
+        <WeeklyMenuTimetable schedule={data.weeklySchedule} />
       </main>
 
       {/* Global Footer */}
