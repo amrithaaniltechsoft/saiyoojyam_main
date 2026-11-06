@@ -191,7 +191,7 @@ export function CheckoutBookingSection({
     formData.append("guardianName", guardianName || name);
     formData.append("relation", relation || "Parent");
     formData.append("contactNumber", contactNumber || phone);
-    formData.append("placeOfWork", "Self/Employed");
+    formData.append("placeOfWork", "");
     const effectiveRoomId =
       room?.id
         ? room.id.replace(/^room-/, "")
