@@ -74,10 +74,19 @@ export function BuildingCtaLocation({
         .trim()
     : "";
 
+  // Clean WhatsApp phone number
+  const rawWhatsapp = (building.bookingFormWhatsappNumber || "918129339122").replace(/[^0-9]/g, "");
+  const cleanWhatsapp =
+    rawWhatsapp.startsWith("91") && rawWhatsapp.length === 12
+      ? rawWhatsapp
+      : rawWhatsapp.length === 10
+      ? `91${rawWhatsapp}`
+      : rawWhatsapp || "918129339122";
+
   // Construct Book Now WhatsApp Link
   const whatsappBookingMessage = activeRoom
     ? `Hello Saiyoojyam Management, I would like to book Room ${activeRoom.roomNumber} (${cleanActiveRoomTitle}) at ${building.name}. Please confirm availability and booking procedure.`
-    : `Hello Saiyoojyam Management, I would like to book accommodation at ${building.name}. Please confirm availability and booking procedure.`;
+    : `Hello Saiyoojyam Management, I would like to enquire about room availability at ${building.name}.`;
 
   return (
     <div id="location" className="flex flex-col gap-3 scroll-mt-24">
@@ -183,15 +192,27 @@ export function BuildingCtaLocation({
               </div>
             </>
           ) : (
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={() => setIsDrawerOpen(true)}
-                className="w-full py-2.5 bg-[#FF561C] hover:bg-[#e0450d] text-white font-semibold rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer"
+            <div className="py-2 text-center flex flex-col items-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center text-[#FF561C]">
+                <BedDouble className="w-5 h-5 text-[#FF561C]" />
+              </div>
+              <div className="space-y-0.5">
+                <h4 className="text-sm font-bold text-gray-950">No Rooms Available</h4>
+                <p className="text-xs text-gray-500 font-normal leading-relaxed">
+                  There are currently no rooms listed in this property.
+                </p>
+              </div>
+              <a
+                href={`https://wa.me/${cleanWhatsapp}?text=${encodeURIComponent(
+                  `Hello Saiyoojyam Management, are there any rooms available or coming up soon at ${building.name}?`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full mt-1 py-2.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer"
               >
-                <BookmarkCheck className="w-4 h-4 text-white" />
-                <span>Book Now</span>
-              </button>
+                <WhatsAppIcon className="w-4 h-4 text-white" />
+                <span>Enquire via WhatsApp</span>
+              </a>
             </div>
           )}
         </div>

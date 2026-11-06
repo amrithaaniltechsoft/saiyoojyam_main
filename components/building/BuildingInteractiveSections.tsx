@@ -124,59 +124,63 @@ export function BuildingInteractiveSections({
       </div>
 
       {/* Sticky Bottom Booking Bar (Mobile & Tablet: < lg, Hidden on Desktop) */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200/90 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-3.5 py-2.5 safe-area-inset-bottom">
-        <div className="max-w-md mx-auto flex items-center justify-between gap-3">
-          {/* Left: Room Number, Sharing & Price */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            {activeRoom && (
-              <div className="w-10 h-9 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 border border-gray-200 px-1">
-                <span className="text-sm font-bold text-[#FF561C] leading-none">
-                  {activeRoom.roomNumber}
+      {Boolean(activeRoom) && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200/90 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-3.5 py-2.5 safe-area-inset-bottom">
+          <div className="max-w-md mx-auto flex items-center justify-between gap-3">
+            {/* Left: Room Number, Sharing & Price */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              {activeRoom && (
+                <div className="w-10 h-9 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 border border-gray-200 px-1">
+                  <span className="text-sm font-bold text-[#FF561C] leading-none">
+                    {activeRoom.roomNumber}
+                  </span>
+                </div>
+              )}
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-baseline gap-1 leading-tight">
+                  {activeRoom?.rentMonthly ? (
+                    <>
+                      <span className="text-base sm:text-lg font-bold text-gray-950 font-sans-normal">
+                        ₹{activeRoom.rentMonthly}
+                      </span>
+                      <span className="text-[10px] text-gray-500 font-normal">/ bed</span>
+                    </>
+                  ) : (
+                    <span className="text-sm font-semibold text-gray-950 truncate">
+                      {building.name}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] text-emerald-700 font-medium truncate leading-none mt-0.5">
+                  {activeRoom
+                    ? `${activeRoom.roomTypeName || `${activeRoom.roomType}-Sharing`} · Fixed rent`
+                    : "Verified Accommodation"}
                 </span>
               </div>
-            )}
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-baseline gap-1 leading-tight">
-                {activeRoom?.rentMonthly ? (
-                  <>
-                    <span className="text-base sm:text-lg font-bold text-gray-950 font-sans-normal">
-                      ₹{activeRoom.rentMonthly}
-                    </span>
-                    <span className="text-[10px] text-gray-500 font-normal">/ bed</span>
-                  </>
-                ) : (
-                  <span className="text-sm font-semibold text-gray-950 truncate">
-                    {building.name}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] text-emerald-700 font-medium truncate leading-none mt-0.5">
-                {activeRoom
-                  ? `${activeRoom.roomTypeName || `${activeRoom.roomType}-Sharing`} · Fixed rent`
-                  : "Verified Accommodation"}
-              </span>
             </div>
-          </div>
 
-          {/* Right: Book Now Button with BookmarkCheck Icon */}
-          <button
-            type="button"
-            onClick={() => setIsDrawerOpen(true)}
-            className="py-2.5 px-4 bg-[#FF561C] hover:bg-[#e0450d] text-white font-semibold rounded-lg text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0 cursor-pointer"
-          >
-            <BookmarkCheck className="w-4 h-4 text-white" />
-            <span>Book Now</span>
-          </button>
+            {/* Right: Book Now Button with BookmarkCheck Icon */}
+            <button
+              type="button"
+              onClick={() => setIsDrawerOpen(true)}
+              className="py-2.5 px-4 bg-[#FF561C] hover:bg-[#e0450d] text-white font-semibold rounded-lg text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0 cursor-pointer"
+            >
+              <BookmarkCheck className="w-4 h-4 text-white" />
+              <span>Book Now</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Mobile/Tablet Booking Drawer Modal */}
-      <BookingDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        building={building}
-        room={activeRoom}
-      />
+      {Boolean(activeRoom) && (
+        <BookingDrawer
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          building={building}
+          room={activeRoom}
+        />
+      )}
     </div>
   );
 }
