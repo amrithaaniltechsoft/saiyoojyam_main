@@ -77,7 +77,7 @@ export function PaymentHistoryTab({ invoices = [], loading = false }: PaymentHis
                     <td className="py-3 sm:py-3.5 px-3 text-right">
                       {tx.print_url ? (
                         <a
-                          href={tx.print_url}
+                          href={tx.print_url.includes("?") ? tx.print_url : `${tx.print_url}?invoice_id=${tx.invoice_id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#FF561C] hover:bg-orange-50 rounded-md transition-colors"
@@ -126,7 +126,7 @@ export function PaymentHistoryTab({ invoices = [], loading = false }: PaymentHis
                 {tx.print_url && (
                   <div className="pt-2 border-t border-gray-200/80 flex justify-end">
                     <a
-                      href={tx.print_url}
+                      href={tx.print_url.includes("?") ? tx.print_url : `${tx.print_url}?invoice_id=${tx.invoice_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-orange-50 border border-gray-200 text-xs font-semibold text-[#FF561C] rounded-md transition-colors"

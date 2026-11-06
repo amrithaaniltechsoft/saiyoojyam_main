@@ -85,7 +85,7 @@ export function CheckoutSuccessModal({
   const printUrl =
     invoiceData?.print_url ||
     (invoiceData?.inmates_id
-      ? `http://localhost/saiyoojyam/api/inmates/print/${invoiceData.inmates_id}`
+      ? `${process.env.NEXT_PUBLIC_API_URL || "https://saiyoojyam.janamithrasociety.com"}/api/inmates/print/${invoiceData.inmates_id}${invoiceData?.invoice_id ? `?invoice_id=${invoiceData.invoice_id}` : ""}`
       : "");
 
   return (
