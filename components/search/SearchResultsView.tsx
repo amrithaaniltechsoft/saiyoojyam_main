@@ -122,6 +122,7 @@ export function SearchResultsView({
               .trim();
             list.push({
               id: key,
+              building_id: b.building_id || b.id,
               slug: key,
               label: label,
               name: label,
@@ -186,6 +187,7 @@ export function SearchResultsView({
                 .trim();
               mapped.push({
                 id: key,
+                building_id: b.building_id || b.id,
                 slug: key,
                 label: label,
                 name: label,

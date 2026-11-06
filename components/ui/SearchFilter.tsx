@@ -22,10 +22,13 @@ export interface DynamicRoomTypeOption {
   room_type_name?: string;
   slug?: string;
   building_id?: number | string;
+  building_slug?: string;
+  building_name?: string;
 }
 
 export interface DynamicBuildingOption {
   id?: number | string;
+  building_id?: number | string;
   slug?: string;
   name?: string;
   label?: string;
@@ -204,14 +207,17 @@ export function SearchFilter({
     };
   }, [floatingOnScroll]);
 
+  const availableBuildings = useMemo(() => {
+    return buildings && buildings.length > 0
+      ? buildings
+      : fetchedBuildings && fetchedBuildings.length > 0
+      ? fetchedBuildings
+      : [];
+  }, [buildings, fetchedBuildings]);
+
   // Build dynamic building location options
   const locOptions = useMemo(() => {
-    const raw =
-      buildings && buildings.length > 0
-        ? buildings
-        : fetchedBuildings && fetchedBuildings.length > 0
-        ? fetchedBuildings
-        : [];
+    const raw = availableBuildings;
 
     const seen = new Set<string>();
     const result: { value: string; label: string }[] = [];
@@ -230,9 +236,47 @@ export function SearchFilter({
       result.push({ value, label: cleanName });
     }
     return result;
-  }, [buildings, fetchedBuildings]);
+  }, [availableBuildings]);
 
-  // Build dynamic room type options
+  // Resolve active building info from effectiveLocation
+  const activeBuildingInfo = useMemo(() => {
+    const loc = (effectiveLocation || "").toString().trim().toLowerCase();
+    if (!loc || loc === "all") return null;
+
+    const locClean = loc.replace(/^saiyoojyam[-_]/i, "");
+
+    for (const b of availableBuildings as any[]) {
+      if (!b) continue;
+      const bId = String(b.id || b.building_id || "").toLowerCase();
+      const bSlug = String(b.slug || b.building_slug || b.value || "").toLowerCase();
+      const bCleanSlug = bSlug.replace(/^saiyoojyam[-_]/i, "");
+      const bName = String(b.name || b.label || b.building_name || "").toLowerCase();
+
+      if (
+        loc === bId ||
+        loc === bSlug ||
+        locClean === bCleanSlug ||
+        loc === `saiyoojyam-${bSlug}` ||
+        bSlug === `saiyoojyam-${loc}` ||
+        loc === bName ||
+        (bName && (bName.includes(locClean) || locClean.includes(bName)))
+      ) {
+        return {
+          id: Number(b.building_id || b.id) || null,
+          slug: bCleanSlug || bSlug,
+          name: b.name || b.label || "",
+        };
+      }
+    }
+
+    if (/^\d+$/.test(loc)) {
+      return { id: Number(loc), slug: loc, name: "" };
+    }
+
+    return { id: null, slug: locClean, name: "" };
+  }, [availableBuildings, effectiveLocation]);
+
+  // Build dynamic room type options (filtered by selected building / location)
   const dynamicRoomTypeOptions = useMemo(() => {
     const raw =
       roomTypes && roomTypes.length > 0
@@ -243,14 +287,44 @@ export function SearchFilter({
 
     const seenValues = new Set<string>();
     const seenLabels = new Set<string>();
-    const result: { value: string; label: string; id?: number | string }[] = [];
+    const result: { value: string; label: string; id?: number | string; building_id?: number | string }[] = [];
 
     result.push({ value: "all", label: "All room types" });
     seenValues.add("all");
     seenLabels.add("all room types");
 
+    const loc = (effectiveLocation || "").toString().trim().toLowerCase();
+    const isAll = !loc || loc === "all";
+
+    const targetBId = activeBuildingInfo?.id ?? null;
+    const targetBSlug = activeBuildingInfo?.slug ?? "";
+
     for (const rt of raw as any[]) {
       if (!rt) continue;
+
+      // Filter by building when a specific location is selected
+      if (!isAll) {
+        const rtBId = Number(rt.building_id || rt.room_type_building_id || 0);
+        const rtBSlug = String(rt.building_slug || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "");
+
+        let matches = false;
+        if (targetBId && rtBId > 0 && rtBId === targetBId) {
+          matches = true;
+        } else if (targetBSlug && rtBSlug && rtBSlug === targetBSlug) {
+          matches = true;
+        } else if (targetBSlug && (rtBSlug.includes(targetBSlug) || targetBSlug.includes(rtBSlug))) {
+          matches = true;
+        } else if (!targetBId && !targetBSlug) {
+          const locClean = loc.replace(/^saiyoojyam[-_]/i, "");
+          if (rtBId > 0 && String(rtBId) === locClean) matches = true;
+          if (rtBSlug && (rtBSlug === locClean || locClean.includes(rtBSlug))) matches = true;
+        }
+
+        if (!matches) {
+          continue;
+        }
+      }
+
       const label = String(rt.label || rt.name || rt.room_type_name || "").trim();
       if (!label) continue;
       const labelKey = label.toLowerCase();
@@ -267,10 +341,65 @@ export function SearchFilter({
         value: rawVal,
         label: label,
         id: rt.id || rt.room_type_id,
+        building_id: rt.building_id,
       });
     }
     return result;
-  }, [roomTypes, fetchedRoomTypes]);
+  }, [roomTypes, fetchedRoomTypes, effectiveLocation, activeBuildingInfo]);
+
+  // Helper to verify if a room type exists for a given location
+  const checkRoomTypeValidForLocation = (locVal: string, rtVal: string): boolean => {
+    if (!rtVal || rtVal === "all") return true;
+    if (!locVal || locVal === "all") return true;
+
+    const raw =
+      roomTypes && roomTypes.length > 0
+        ? roomTypes
+        : fetchedRoomTypes && fetchedRoomTypes.length > 0
+        ? fetchedRoomTypes
+        : [];
+
+    const locClean = locVal.toString().trim().toLowerCase().replace(/^saiyoojyam[-_]/i, "");
+
+    const bMatch = (availableBuildings as any[]).find((b: any) => {
+      const bId = String(b.id || b.building_id || "").toLowerCase();
+      const bSlug = String(b.slug || b.building_slug || b.value || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "");
+      return locClean === bId || locClean === bSlug;
+    });
+
+    const targetId = bMatch ? Number(bMatch.building_id || bMatch.id) : (/^\d+$/.test(locClean) ? Number(locClean) : null);
+    const targetSlug = bMatch ? String(bMatch.slug || bMatch.building_slug || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "") : locClean;
+
+    const rtLower = rtVal.toLowerCase();
+
+    return raw.some((rt: any) => {
+      const rtBId = Number(rt.building_id || rt.room_type_building_id || 0);
+      const rtBSlug = String(rt.building_slug || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "");
+
+      const matchesBuilding =
+        (targetId && rtBId === targetId) ||
+        (targetSlug && rtBSlug === targetSlug) ||
+        (!targetId && !targetSlug);
+
+      if (!matchesBuilding) return false;
+
+      const v = String(rt.slug || rt.value || rt.id || "").toLowerCase();
+      const l = String(rt.label || rt.name || rt.room_type_name || "").toLowerCase();
+      return v === rtLower || l === rtLower;
+    });
+  };
+
+  // Keep room type in sync if effectiveLocation causes current room type to become invalid
+  useEffect(() => {
+    if (effectiveLocation && effectiveLocation !== "all" && effectiveRoomType && effectiveRoomType !== "all") {
+      if (!checkRoomTypeValidForLocation(effectiveLocation, effectiveRoomType)) {
+        setInternalRoomType("all");
+        if (setSearchFilter) {
+          setSearchFilter((prev) => ({ ...prev, roomType: "all" }));
+        }
+      }
+    }
+  }, [effectiveLocation, effectiveRoomType, availableBuildings, roomTypes, fetchedRoomTypes]);
 
   // Selected Location Label Object
   const selectedLocationObj = useMemo(() => {
@@ -338,19 +467,23 @@ export function SearchFilter({
       if (numMatch) return numMatch;
     }
 
-    const pretty = curr
-      .replace(/[-_]/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-    return { value: curr, label: pretty };
+    // If current room type does not belong to the selected building, fallback to "All room types"
+    return dynamicRoomTypeOptions[0] || { value: "all", label: "All room types" };
   }, [dynamicRoomTypeOptions, effectiveRoomType]);
 
   const handleLocationSelect = (val: string) => {
     setInternalLocation(val);
+
+    const validRt = checkRoomTypeValidForLocation(val, effectiveRoomType) ? effectiveRoomType : "all";
+    if (validRt !== effectiveRoomType) {
+      setInternalRoomType("all");
+    }
+
     if (setSearchFilter) {
-      setSearchFilter((prev) => ({ ...prev, location: val }));
+      setSearchFilter((prev) => ({ ...prev, location: val, roomType: validRt }));
     }
     if (onFilterChange) {
-      onFilterChange(val, effectiveRoomType);
+      onFilterChange(val, validRt);
     }
     setOpenDropdown(null);
   };

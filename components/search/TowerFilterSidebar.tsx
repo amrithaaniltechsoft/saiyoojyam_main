@@ -16,6 +16,7 @@ export interface TowerRoomFilter {
 
 export interface DynamicBuildingOption {
   id: string;
+  building_id?: number | string;
   label: string;
   slug?: string;
   name?: string;

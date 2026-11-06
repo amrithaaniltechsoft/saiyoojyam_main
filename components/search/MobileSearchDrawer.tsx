@@ -66,13 +66,16 @@ export function MobileSearchDrawer({
     }
   }, [buildings, roomTypes]);
 
+  const availableBuildings = useMemo(() => {
+    return buildings && buildings.length > 0
+      ? buildings
+      : fetchedBuildings && fetchedBuildings.length > 0
+      ? fetchedBuildings
+      : locationOptions;
+  }, [buildings, fetchedBuildings]);
+
   const locOptions = useMemo(() => {
-    const raw =
-      buildings && buildings.length > 0
-        ? buildings
-        : fetchedBuildings && fetchedBuildings.length > 0
-        ? fetchedBuildings
-        : locationOptions;
+    const raw = availableBuildings;
     const seen = new Set<string>();
     const result: { value: string; label: string }[] = [];
 
@@ -89,7 +92,45 @@ export function MobileSearchDrawer({
       result.push({ value, label: cleanName });
     }
     return result;
-  }, [buildings, fetchedBuildings]);
+  }, [availableBuildings]);
+
+  // Resolve active building info for tempLocation
+  const activeBuildingInfo = useMemo(() => {
+    const loc = (tempLocation || "").toString().trim().toLowerCase();
+    if (!loc || loc === "all") return null;
+
+    const locClean = loc.replace(/^saiyoojyam[-_]/i, "");
+
+    for (const b of availableBuildings as any[]) {
+      if (!b) continue;
+      const bId = String(b.id || b.building_id || "").toLowerCase();
+      const bSlug = String(b.slug || b.building_slug || b.value || "").toLowerCase();
+      const bCleanSlug = bSlug.replace(/^saiyoojyam[-_]/i, "");
+      const bName = String(b.name || b.label || b.building_name || "").toLowerCase();
+
+      if (
+        loc === bId ||
+        loc === bSlug ||
+        locClean === bCleanSlug ||
+        loc === `saiyoojyam-${bSlug}` ||
+        bSlug === `saiyoojyam-${loc}` ||
+        loc === bName ||
+        (bName && (bName.includes(locClean) || locClean.includes(bName)))
+      ) {
+        return {
+          id: Number(b.building_id || b.id) || null,
+          slug: bCleanSlug || bSlug,
+          name: b.name || b.label || "",
+        };
+      }
+    }
+
+    if (/^\d+$/.test(loc)) {
+      return { id: Number(loc), slug: loc, name: "" };
+    }
+
+    return { id: null, slug: locClean, name: "" };
+  }, [availableBuildings, tempLocation]);
 
   const dynamicRoomTypeOptions = useMemo(() => {
     const raw =
@@ -107,9 +148,39 @@ export function MobileSearchDrawer({
     seenValues.add("all");
     seenLabels.add("all room types");
 
+    const loc = (tempLocation || "").toString().trim().toLowerCase();
+    const isAll = !loc || loc === "all";
+
+    const targetBId = activeBuildingInfo?.id ?? null;
+    const targetBSlug = activeBuildingInfo?.slug ?? "";
+
     for (const rt of raw as any[]) {
       if (!rt) continue;
-      const label = String(rt.label || rt.name || rt.room_type_name || "").trim();
+
+      // Filter by building when location is not "all"
+      if (!isAll) {
+        const rtBId = Number(rt.building_id || (rt as any).room_type_building_id || 0);
+        const rtBSlug = String((rt as any).building_slug || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "");
+
+        let matches = false;
+        if (targetBId && rtBId > 0 && rtBId === targetBId) {
+          matches = true;
+        } else if (targetBSlug && rtBSlug && rtBSlug === targetBSlug) {
+          matches = true;
+        } else if (targetBSlug && (rtBSlug.includes(targetBSlug) || targetBSlug.includes(rtBSlug))) {
+          matches = true;
+        } else if (!targetBId && !targetBSlug) {
+          const locClean = loc.replace(/^saiyoojyam[-_]/i, "");
+          if (rtBId > 0 && String(rtBId) === locClean) matches = true;
+          if (rtBSlug && (rtBSlug === locClean || locClean.includes(rtBSlug))) matches = true;
+        }
+
+        if (!matches) {
+          continue;
+        }
+      }
+
+      const label = String(rt.label || rt.name || (rt as any).room_type_name || "").trim();
       if (!label) continue;
       const labelKey = label.toLowerCase();
       if (seenLabels.has(labelKey)) continue;
@@ -124,11 +195,62 @@ export function MobileSearchDrawer({
       result.push({
         value: rawVal,
         label: label,
-        id: rt.id || rt.room_type_id,
+        id: rt.id || (rt as any).room_type_id,
       });
     }
     return result;
-  }, [roomTypes, fetchedRoomTypes]);
+  }, [roomTypes, fetchedRoomTypes, tempLocation, activeBuildingInfo]);
+
+  // Check if room type is valid for location
+  const checkRoomTypeValidForLocation = (locVal: string, rtVal: string): boolean => {
+    if (!rtVal || rtVal === "all") return true;
+    if (!locVal || locVal === "all") return true;
+
+    const raw =
+      roomTypes && roomTypes.length > 0
+        ? roomTypes
+        : fetchedRoomTypes && fetchedRoomTypes.length > 0
+        ? fetchedRoomTypes
+        : roomTypeOptions;
+
+    const locClean = locVal.toString().trim().toLowerCase().replace(/^saiyoojyam[-_]/i, "");
+
+    const bMatch = (availableBuildings as any[]).find((b: any) => {
+      const bId = String(b.id || b.building_id || "").toLowerCase();
+      const bSlug = String(b.slug || b.building_slug || b.value || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "");
+      return locClean === bId || locClean === bSlug;
+    });
+
+    const targetId = bMatch ? Number(bMatch.building_id || bMatch.id) : (/^\d+$/.test(locClean) ? Number(locClean) : null);
+    const targetSlug = bMatch ? String(bMatch.slug || bMatch.building_slug || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "") : locClean;
+
+    const rtLower = rtVal.toLowerCase();
+
+    return raw.some((rt: any) => {
+      const rtBId = Number(rt.building_id || rt.room_type_building_id || 0);
+      const rtBSlug = String(rt.building_slug || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "");
+
+      const matchesBuilding =
+        (targetId && rtBId === targetId) ||
+        (targetSlug && rtBSlug === targetSlug) ||
+        (!targetId && !targetSlug);
+
+      if (!matchesBuilding) return false;
+
+      const v = String(rt.slug || rt.value || rt.id || "").toLowerCase();
+      const l = String(rt.label || rt.name || rt.room_type_name || "").toLowerCase();
+      return v === rtLower || l === rtLower;
+    });
+  };
+
+  const handleSelectLocation = (newLoc: string) => {
+    setTempLocation(newLoc);
+    if (tempRoomType && tempRoomType !== "all") {
+      if (!checkRoomTypeValidForLocation(newLoc, tempRoomType)) {
+        setTempRoomType("all");
+      }
+    }
+  };
 
   // Sync state whenever drawer opens
   useEffect(() => {
@@ -201,7 +323,7 @@ export function MobileSearchDrawer({
                   <button
                     key={`mob-loc-${opt.value}-${idx}`}
                     type="button"
-                    onClick={() => setTempLocation(opt.value)}
+                    onClick={() => handleSelectLocation(opt.value)}
                     className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-left text-xs transition-all cursor-pointer active:scale-95 ${isSelected
                       ? "border border-[#FF561C]/50 bg-orange-50 text-[#C44610] font-semibold"
                       : "border border-gray-200 bg-gray-50/70 hover:bg-gray-100 text-gray-800 font-medium"
