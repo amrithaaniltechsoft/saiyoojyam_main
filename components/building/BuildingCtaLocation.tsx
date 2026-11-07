@@ -199,7 +199,7 @@ export function BuildingCtaLocation({
               <div className="space-y-0.5">
                 <h4 className="text-sm font-bold text-gray-950">No Rooms Available</h4>
                 <p className="text-xs text-gray-500 font-normal leading-relaxed">
-                  There are currently no rooms listed in this property.
+                  All rooms in this property are currently occupied for the selected dates. Enquire on WhatsApp for upcoming vacancies or waitlist.
                 </p>
               </div>
               <a

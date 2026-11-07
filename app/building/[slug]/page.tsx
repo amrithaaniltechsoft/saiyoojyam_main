@@ -13,6 +13,13 @@ interface BuildingPageProps {
   params: Promise<{
     slug: string;
   }>;
+  searchParams?: Promise<{
+    date?: string;
+    checkIn?: string;
+    room?: string;
+    roomId?: string;
+    roomType?: string;
+  }>;
 }
 
 export async function generateMetadata({ params }: BuildingPageProps): Promise<Metadata> {
@@ -100,12 +107,17 @@ async function getBuildingData(slug: string): Promise<BuildingDetailData> {
   };
 }
 
-async function getBuildingRooms(slug: string): Promise<RoomItem[]> {
+async function getBuildingRooms(slug: string, date?: string): Promise<RoomItem[]> {
   const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost/saiyoojyam";
   const baseUrl = rawApiUrl.replace(/\/+$/, "");
 
+  const query = new URLSearchParams({ location: slug });
+  if (date) {
+    query.set("date", date);
+  }
+
   try {
-    const res = await fetch(`${baseUrl}/api/rooms?location=${slug}`, {
+    const res = await fetch(`${baseUrl}/api/rooms?${query.toString()}`, {
       cache: "no-store",
     });
 
@@ -123,10 +135,12 @@ async function getBuildingRooms(slug: string): Promise<RoomItem[]> {
   return [];
 }
 
-export default async function BuildingPage({ params }: BuildingPageProps) {
+export default async function BuildingPage({ params, searchParams }: BuildingPageProps) {
   const resolvedParams = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const requestedDate = resolvedSearchParams?.date || resolvedSearchParams?.checkIn || "";
   const building = await getBuildingData(resolvedParams.slug);
-  const buildingRooms = await getBuildingRooms(resolvedParams.slug);
+  const buildingRooms = await getBuildingRooms(resolvedParams.slug, requestedDate);
 
   return (
     <div className="min-h-screen bg-white flex flex-col justify-between font-sans-normal building-page-scope">
