@@ -64,7 +64,7 @@ export function CheckoutBookingSection({
     isOpen: boolean;
     title?: string;
     message: string;
-    type?: "email_conflict" | "warning" | "error" | "info";
+    type?: "email_conflict" | "warning" | "error" | "info" | "id_proof" | "photo";
     primaryButtonText?: string;
     onPrimaryClick?: () => void;
     secondaryButtonText?: string;
@@ -210,6 +210,53 @@ export function CheckoutBookingSection({
       return;
     }
 
+    // 4. Check mandatory ID proof
+    if (!idProofFile && !idProofFileName) {
+      setAlertModal({
+        isOpen: true,
+        title: "ID Proof Required",
+        message:
+          "Please upload your ID proof document (Aadhaar Card, Passport, Driving License, or Voter ID) to proceed with your booking.",
+        type: "id_proof",
+        primaryButtonText: "Upload ID Proof",
+        onPrimaryClick: () => {
+          setAlertModal(null);
+          setTimeout(() => {
+            const container = document.getElementById("inmates-id-proof-zone");
+            if (container) {
+              container.scrollIntoView({ behavior: "smooth", block: "center" });
+              const input = container.querySelector("input[type='file']") as HTMLInputElement | null;
+              input?.click();
+            }
+          }, 150);
+        },
+      });
+      return;
+    }
+
+    // 5. Check mandatory Profile photo
+    if (!photoFile && !photoFileName) {
+      setAlertModal({
+        isOpen: true,
+        title: "Profile Photo Required",
+        message: "Please upload your profile photo to proceed with your booking.",
+        type: "photo",
+        primaryButtonText: "Upload Profile Photo",
+        onPrimaryClick: () => {
+          setAlertModal(null);
+          setTimeout(() => {
+            const container = document.getElementById("inmates-photo-zone");
+            if (container) {
+              container.scrollIntoView({ behavior: "smooth", block: "center" });
+              const input = container.querySelector("input[type='file']") as HTMLInputElement | null;
+              input?.click();
+            }
+          }, 150);
+        },
+      });
+      return;
+    }
+
     // Immediately disable the button and set ref
     isSubmittingRef.current = true;
     setIsSubmitting(true);
@@ -313,6 +360,14 @@ export function CheckoutBookingSection({
               errorMsg.toLowerCase().includes("active resident") ||
               errorMsg.toLowerCase().includes("unique email"));
 
+          const isIdProofMissing =
+            typeof errorMsg === "string" &&
+            errorMsg.toLowerCase().includes("id proof");
+
+          const isPhotoMissing =
+            typeof errorMsg === "string" &&
+            (errorMsg.toLowerCase().includes("profile photo") || errorMsg.toLowerCase().includes("photo is mandatory"));
+
           if (isEmailConflict) {
             setAlertModal({
               isOpen: true,
@@ -335,6 +390,44 @@ export function CheckoutBookingSection({
               onSecondaryClick: () => {
                 setAlertModal(null);
                 setIsLoginModalOpen(true);
+              },
+            });
+          } else if (isIdProofMissing) {
+            setAlertModal({
+              isOpen: true,
+              title: "ID Proof Required",
+              message: errorMsg,
+              type: "id_proof",
+              primaryButtonText: "Upload ID Proof",
+              onPrimaryClick: () => {
+                setAlertModal(null);
+                setTimeout(() => {
+                  const container = document.getElementById("inmates-id-proof-zone");
+                  if (container) {
+                    container.scrollIntoView({ behavior: "smooth", block: "center" });
+                    const input = container.querySelector("input[type='file']") as HTMLInputElement | null;
+                    input?.click();
+                  }
+                }, 150);
+              },
+            });
+          } else if (isPhotoMissing) {
+            setAlertModal({
+              isOpen: true,
+              title: "Profile Photo Required",
+              message: errorMsg,
+              type: "photo",
+              primaryButtonText: "Upload Profile Photo",
+              onPrimaryClick: () => {
+                setAlertModal(null);
+                setTimeout(() => {
+                  const container = document.getElementById("inmates-photo-zone");
+                  if (container) {
+                    container.scrollIntoView({ behavior: "smooth", block: "center" });
+                    const input = container.querySelector("input[type='file']") as HTMLInputElement | null;
+                    input?.click();
+                  }
+                }, 150);
               },
             });
           } else {

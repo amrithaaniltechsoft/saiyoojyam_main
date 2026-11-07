@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, MailWarning, AlertCircle, AlertTriangle, ArrowRight, LogIn } from "lucide-react";
+import { X, MailWarning, AlertCircle, AlertTriangle, ArrowRight, LogIn, FileText, Camera } from "lucide-react";
 
 export interface CheckoutAlertModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   message: string;
-  type?: "email_conflict" | "warning" | "error" | "info";
+  type?: "email_conflict" | "warning" | "error" | "info" | "id_proof" | "photo";
   primaryButtonText?: string;
   onPrimaryClick?: () => void;
   secondaryButtonText?: string;
@@ -109,6 +109,18 @@ export function CheckoutAlertModal({
                 <MailWarning className="w-7 h-7 stroke-[2.2]" />
               </div>
             </div>
+          ) : type === "id_proof" ? (
+            <div className="relative inline-flex items-center justify-center">
+              <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-200 text-[#FF561C] flex items-center justify-center shadow-xs">
+                <FileText className="w-7 h-7 stroke-[2.2]" />
+              </div>
+            </div>
+          ) : type === "photo" ? (
+            <div className="relative inline-flex items-center justify-center">
+              <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-200 text-[#FF561C] flex items-center justify-center shadow-xs">
+                <Camera className="w-7 h-7 stroke-[2.2]" />
+              </div>
+            </div>
           ) : isError ? (
             <div className="relative inline-flex items-center justify-center">
               <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center shadow-xs">
@@ -182,3 +194,4 @@ export function CheckoutAlertModal({
     </div>
   );
 }
+

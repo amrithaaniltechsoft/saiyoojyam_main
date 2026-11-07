@@ -14,7 +14,9 @@ import {
 } from "lucide-react";
 
 interface DocumentDropzoneProps {
+  id?: string;
   label: string;
+  required?: boolean;
   accept: string;
   acceptText?: string;
   fileName: string;
@@ -25,7 +27,9 @@ interface DocumentDropzoneProps {
 }
 
 function DocumentDropzone({
+  id,
   label,
+  required = false,
   accept,
   acceptText,
   fileName,
@@ -90,9 +94,11 @@ function DocumentDropzone({
   };
 
   return (
-    <div className="relative flex flex-col gap-1.5">
+    <div id={id} className="relative flex flex-col gap-1.5 scroll-mt-24">
       <label className="text-xs font-semibold text-gray-950 flex items-center justify-between">
-        <span>{label}</span>
+        <span>
+          {label} {required && <span className="text-red-600">*</span>}
+        </span>
       </label>
 
       <input
@@ -479,15 +485,17 @@ export function CheckoutGuestForm({
             <h3 className="text-sm font-semibold text-gray-900">
               Documents &amp; Verification
             </h3>
-            <span className="text-[11px] text-gray-500 font-normal">
-              Drag &amp; drop or click to upload
+            <span className="text-[11px] text-[#FF561C] font-semibold">
+              Both documents required *
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             {/* ID Proof Dropzone */}
             <DocumentDropzone
+              id="inmates-id-proof-zone"
               label="ID proof"
+              required={true}
               accept="image/*,.pdf"
               acceptText="JPG, PNG, WEBP, or PDF"
               fileName={idProofFileName}
@@ -505,7 +513,9 @@ export function CheckoutGuestForm({
 
             {/* Profile Photo Dropzone */}
             <DocumentDropzone
+              id="inmates-photo-zone"
               label="Profile Photo"
+              required={true}
               accept="image/*"
               acceptText="JPG, PNG, or WEBP"
               fileName={photoFileName}
