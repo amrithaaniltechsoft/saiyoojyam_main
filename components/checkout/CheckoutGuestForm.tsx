@@ -352,6 +352,7 @@ export function CheckoutGuestForm({
                 Email address <span className="text-red-600">*</span>
               </label>
               <input
+                id="guest-email-input"
                 type="email"
                 required
                 value={email}
@@ -526,6 +527,7 @@ export function CheckoutGuestForm({
         <div className="pt-2">
           <label className="flex items-start gap-3 cursor-pointer select-none">
             <input
+              id="verification-agreed-checkbox"
               type="checkbox"
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}

@@ -6,6 +6,7 @@ import { BuildingDetailData } from "@/data/buildingsData";
 import { RoomItem } from "@/data/roomsData";
 import { CheckoutGuestForm } from "@/components/checkout/CheckoutGuestForm";
 import { LoginModal } from "@/components/global/LoginModal";
+import { CheckoutAlertModal } from "@/components/checkout/CheckoutAlertModal";
 import { ArrowDown } from "lucide-react";
 
 interface CheckoutBookingSectionProps {
@@ -57,6 +58,18 @@ export function CheckoutBookingSection({
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+
+  // Custom Alert / Notice Modal state
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title?: string;
+    message: string;
+    type?: "email_conflict" | "warning" | "error" | "info";
+    primaryButtonText?: string;
+    onPrimaryClick?: () => void;
+    secondaryButtonText?: string;
+    onSecondaryClick?: () => void;
+  } | null>(null);
 
   // Availability checking state
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
@@ -162,16 +175,38 @@ export function CheckoutBookingSection({
 
     // 2. Check verification agreement
     if (!agreed) {
-      alert("Please confirm the verification checkbox to proceed.");
+      setAlertModal({
+        isOpen: true,
+        title: "Verification Required",
+        message: "Please confirm the verification checkbox to proceed with your booking.",
+        type: "warning",
+        primaryButtonText: "I Understand",
+        onPrimaryClick: () => {
+          setAlertModal(null);
+          setTimeout(() => {
+            const el = document.getElementById("verification-agreed-checkbox");
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+              el.focus();
+            }
+          }, 150);
+        },
+      });
       return;
     }
 
     // 3. Check room availability
     if (availabilityResult && !availabilityResult.isAvailable) {
-      alert(
-        availabilityResult.message ||
-          "This room is not available for the selected dates. Please choose different dates or select another room."
-      );
+      setAlertModal({
+        isOpen: true,
+        title: "Room Unavailable",
+        message:
+          availabilityResult.message ||
+          "This room is not available for the selected dates. Please choose different dates or select another room.",
+        type: "warning",
+        primaryButtonText: "Okay, Got It",
+        onPrimaryClick: () => setAlertModal(null),
+      });
       return;
     }
 
@@ -269,7 +304,49 @@ export function CheckoutBookingSection({
           isSubmittingRef.current = false;
           setIsSubmitting(false);
           setIsRedirecting(false);
-          alert(json?.message || "Failed to submit booking. Please try again.");
+
+          const errorMsg = json?.message || "Failed to submit booking. Please try again.";
+          const isEmailConflict =
+            typeof errorMsg === "string" &&
+            errorMsg.toLowerCase().includes("email") &&
+            (errorMsg.toLowerCase().includes("already registered") ||
+              errorMsg.toLowerCase().includes("active resident") ||
+              errorMsg.toLowerCase().includes("unique email"));
+
+          if (isEmailConflict) {
+            setAlertModal({
+              isOpen: true,
+              title: "Email Already Registered",
+              message: errorMsg,
+              type: "email_conflict",
+              primaryButtonText: "Change Email Address",
+              onPrimaryClick: () => {
+                setAlertModal(null);
+                setTimeout(() => {
+                  const input = document.getElementById("guest-email-input") as HTMLInputElement | null;
+                  if (input) {
+                    input.scrollIntoView({ behavior: "smooth", block: "center" });
+                    input.focus();
+                    input.select?.();
+                  }
+                }, 150);
+              },
+              secondaryButtonText: "Log In Instead",
+              onSecondaryClick: () => {
+                setAlertModal(null);
+                setIsLoginModalOpen(true);
+              },
+            });
+          } else {
+            setAlertModal({
+              isOpen: true,
+              title: "Booking Notice",
+              message: errorMsg,
+              type: "error",
+              primaryButtonText: "Okay, Got It",
+              onPrimaryClick: () => setAlertModal(null),
+            });
+          }
         }
       })
       .catch((err) => {
@@ -278,7 +355,14 @@ export function CheckoutBookingSection({
         isSubmittingRef.current = false;
         setIsSubmitting(false);
         setIsRedirecting(false);
-        alert("Failed to submit booking. Please try again.");
+        setAlertModal({
+          isOpen: true,
+          title: "Connection Error",
+          message: "Unable to complete booking request. Please check your internet connection and try again.",
+          type: "error",
+          primaryButtonText: "Close",
+          onPrimaryClick: () => setAlertModal(null),
+        });
       });
   };
 
@@ -385,6 +469,21 @@ export function CheckoutBookingSection({
           setIsLoginModalOpen(false);
         }}
       />
+
+      {/* Custom Alert/Error Notice Modal */}
+      {alertModal && (
+        <CheckoutAlertModal
+          isOpen={alertModal.isOpen}
+          title={alertModal.title}
+          message={alertModal.message}
+          type={alertModal.type}
+          primaryButtonText={alertModal.primaryButtonText}
+          onPrimaryClick={alertModal.onPrimaryClick}
+          secondaryButtonText={alertModal.secondaryButtonText}
+          onSecondaryClick={alertModal.onSecondaryClick}
+          onClose={() => setAlertModal(null)}
+        />
+      )}
 
       {/* Mobile/Tablet: Center Bottom Floating Redirect Button to "Enter Details" (hidden once user reaches form) */}
       <div
