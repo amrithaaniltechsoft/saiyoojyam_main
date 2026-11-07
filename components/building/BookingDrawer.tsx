@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -54,6 +54,10 @@ export function BookingDrawer({
     availableBeds?: number;
     statusLabel?: string;
   } | null>(null);
+
+  // Navigation / Redirecting state to prevent multiple clicks and show spinner
+  const [isNavigating, setIsNavigating] = useState(false);
+  const isNavigatingRef = useRef(false);
 
   const cleanRoomId = useMemo(() => {
     if (!room) return "";
@@ -150,8 +154,28 @@ export function BookingDrawer({
       if ((urlDuration === "Long Term" || urlDuration === "Short Term") && !duration) {
         setDuration(urlDuration);
       }
+    } else {
+      setIsNavigating(false);
+      isNavigatingRef.current = false;
     }
   }, [isOpen, room, searchParams, checkInDate, duration]);
+
+  // Prefetch checkout route in background when details are selected to minimize transition delay
+  useEffect(() => {
+    if (isOpen && duration && checkInDate) {
+      const queryParams = new URLSearchParams({
+        building: selectedBuildingSlug,
+        ...(room ? { roomId: room.id } : {}),
+        persons: numPersons || "1",
+        duration: duration || "Long Term",
+        ...(checkInDate ? { checkIn: checkInDate } : {}),
+        ...(duration === "Short Term" && checkOutDate ? { checkOut: checkOutDate } : {}),
+      });
+      try {
+        router.prefetch(`/checkout?${queryParams.toString()}`);
+      } catch {}
+    }
+  }, [isOpen, duration, checkInDate, checkOutDate, selectedBuildingSlug, room, numPersons, router]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -263,6 +287,11 @@ export function BookingDrawer({
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Guard against multiple clicks
+    if (isNavigatingRef.current || isNavigating) {
+      return;
+    }
+
     if (!duration) {
       alert("Please select duration of stay.");
       return;
@@ -305,8 +334,20 @@ export function BookingDrawer({
       ...(duration === "Short Term" && checkOutDate ? { checkOut: checkOutDate } : {}),
     });
 
-    onClose();
-    router.push(`/checkout?${queryParams.toString()}`);
+    const targetUrl = `/checkout?${queryParams.toString()}`;
+
+    // Immediately lock button and activate loading state
+    isNavigatingRef.current = true;
+    setIsNavigating(true);
+
+    router.push(targetUrl);
+
+    // Fallback if client-side navigation stalls
+    setTimeout(() => {
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/checkout")) {
+        window.location.href = targetUrl;
+      }
+    }, 1800);
   };
 
   const drawerContent = (
@@ -314,12 +355,31 @@ export function BookingDrawer({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
+        onClick={() => {
+          if (!isNavigating) onClose();
+        }}
         aria-hidden="true"
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col h-full transform transition ease-in-out duration-300">
+        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col h-full transform transition ease-in-out duration-300 relative">
+          {/* Active Navigation / Redirecting Overlay */}
+          {isNavigating && (
+            <div className="absolute inset-0 bg-white/92 backdrop-blur-xs z-50 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+              <div className="relative mb-4">
+                <div className="w-16 h-16 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shadow-md">
+                  <Loader2 className="w-8 h-8 text-[#FF561C] animate-spin" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-1.5">
+                Redirecting to Checkout...
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 max-w-xs leading-relaxed font-normal">
+                Securing your room details and loading checkout summary. Please wait.
+              </p>
+            </div>
+          )}
+
           {/* Header */}
           <div className="px-6 py-5 bg-white border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
             <div>
@@ -329,8 +389,11 @@ export function BookingDrawer({
             </div>
             <button
               type="button"
-              onClick={onClose}
-              className="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+              onClick={() => {
+                if (!isNavigating) onClose();
+              }}
+              disabled={isNavigating}
+              className="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="Close booking drawer"
             >
               <X className="w-5 h-5" />
@@ -591,21 +654,34 @@ export function BookingDrawer({
                 ) : (
                   <button
                     type="submit"
-                    disabled={isCheckingAvailability}
-                    className="w-full py-3 px-4 bg-[#FF561C] hover:bg-[#e0450d] text-white font-semibold rounded-md text-sm sm:text-base shadow-md shadow-orange-500/20 transition-all active:scale-[0.99] flex items-center justify-between cursor-pointer group disabled:opacity-50"
+                    disabled={isCheckingAvailability || isNavigating}
+                    className={`w-full py-3.5 px-4 rounded-xl text-sm sm:text-base font-semibold shadow-md transition-all flex items-center justify-between select-none ${
+                      isNavigating
+                        ? "bg-[#FF561C] text-white cursor-wait opacity-90 shadow-orange-500/25"
+                        : "bg-[#FF561C] hover:bg-[#e0450d] text-white shadow-orange-500/20 active:scale-[0.99] cursor-pointer group"
+                    } disabled:opacity-75 disabled:cursor-not-allowed`}
                   >
-                    <span className="flex items-center gap-2">
-                      <span>Book Now</span>
-                      {room && (
-                        <span className="text-xs font-normal text-white/90">
-                          (Room {room.roomNumber})
+                    {isNavigating ? (
+                      <div className="w-full flex items-center justify-center gap-2.5">
+                        <Loader2 className="w-5 h-5 animate-spin text-white" />
+                        <span className="font-semibold text-white">Opening Checkout...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="flex items-center gap-2">
+                          <span>Book Now</span>
+                          {room && (
+                            <span className="text-xs font-normal text-white/90">
+                              (Room {room.roomNumber})
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </span>
-                    <span className="flex items-center gap-1.5 font-bold text-white text-sm sm:text-base">
-                      <span>{room ? `₹${room.rentMonthly}/mo` : "Check Availability"}</span>
-                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-                    </span>
+                        <span className="flex items-center gap-1.5 font-bold text-white text-sm sm:text-base">
+                          <span>{room ? `₹${room.rentMonthly}/mo` : "Check Availability"}</span>
+                          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                      </>
+                    )}
                   </button>
                 )}
               </div>
