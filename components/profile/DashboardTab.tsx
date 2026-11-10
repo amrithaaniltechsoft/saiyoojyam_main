@@ -198,10 +198,6 @@ export function DashboardTab({
                 <span className="text-gray-500">{currentBill?.room_label || "Room Rent (Monthly)"}</span>
                 <span className="font-medium text-gray-900">{currentBill?.rent_amount || "₹0.00"}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Electricity & WiFi</span>
-                <span className="font-medium text-emerald-600">Included (₹0)</span>
-              </div>
               <div className="flex justify-between items-baseline pt-1">
                 <span className="text-gray-700 font-semibold text-xs sm:text-sm">
                   {isAllPaid ? "Balance Due" : "Total Outstanding"}

@@ -322,19 +322,11 @@ export function MonthlyPaymentTab({
                       )}
                     </div>
 
-                    {/* Room & Service Details */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-gray-600 pt-1">
+                    {/* Room Details */}
+                    <div className="text-xs text-gray-600 pt-1">
                       <div>
                         <span className="text-gray-400 block text-[11px]">Room & Bed</span>
                         <span className="font-medium text-gray-900">{bill.room_label}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-400 block text-[11px]">Mess & Meals</span>
-                        <span className="font-medium text-emerald-600">3 Meals Included (₹0)</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-400 block text-[11px]">WiFi & Electricity</span>
-                        <span className="font-medium text-emerald-600">Included (₹0)</span>
                       </div>
                     </div>
                   </div>
@@ -410,10 +402,6 @@ export function MonthlyPaymentTab({
             <div className="flex justify-between">
               <span className="text-gray-600">Monthly Bed Rent</span>
               <span className="font-medium text-gray-900">{currentBill?.rent_amount || "₹0.00"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">3 Meals & Amenities</span>
-              <span className="font-medium text-emerald-600">Included (₹0)</span>
             </div>
             {currentBill?.last_paid_date && (
               <div className="flex justify-between pt-1 border-t border-gray-200">
