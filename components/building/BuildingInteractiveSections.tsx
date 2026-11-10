@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { BuildingDetailData } from "@/data/buildingsData";
 import { RoomItem } from "@/data/roomsData";
@@ -37,6 +37,14 @@ export function BuildingInteractiveSections({
       ? buildingRooms.find((r) => r.roomType === roomTypeParam)
       : undefined) ||
     buildingRooms[0];
+
+  // Sync selectedRoom whenever roomIdParam changes in the URL (e.g. via Rooms dropdown)
+  useEffect(() => {
+    if (roomIdParam) {
+      const match = buildingRooms.find((r) => r.id === roomIdParam);
+      if (match) setSelectedRoom(match);
+    }
+  }, [roomIdParam, buildingRooms]);
 
   // Exclude the currently selected room so it is not duplicated in the list below
   const otherRooms = useMemo(() => {

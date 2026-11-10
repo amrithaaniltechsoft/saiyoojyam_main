@@ -149,6 +149,7 @@ export default async function BuildingPage({ params, searchParams }: BuildingPag
         buildingName={building.name}
         whatsappNumber={building.bookingFormWhatsappNumber}
         currentBuildingSlug={building.slug}
+        rooms={buildingRooms}
       />
 
       <main className="flex-grow pt-12 sm:pt-14 md:pt-12 pb-16 lg:pb-0">

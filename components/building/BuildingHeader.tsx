@@ -20,6 +20,7 @@ import { ProfileDropdown } from "@/components/global/ProfileDropdown";
 import { BuildingMegaMenu } from "@/components/building/BuildingMegaMenu";
 import { MobileSearchDrawer } from "@/components/search/MobileSearchDrawer";
 import { MobileSearchSummaryButton } from "@/components/search/MobileSearchSummaryButton";
+import { RoomItem } from "@/data/roomsData";
 
 const ALL_BUILDINGS = [
   {
@@ -46,12 +47,14 @@ interface BuildingHeaderProps {
   buildingName?: string;
   whatsappNumber?: string;
   currentBuildingSlug?: string;
+  rooms?: RoomItem[];
 }
 
 export function BuildingHeader({
   buildingName,
   whatsappNumber = "918129339122",
   currentBuildingSlug = "premier",
+  rooms = [],
 }: BuildingHeaderProps) {
   const router = useRouter();
   const [isBuildingMenuOpen, setIsBuildingMenuOpen] = useState(false);
@@ -220,6 +223,8 @@ export function BuildingHeader({
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
               currentBuildingSlug={currentBuildingSlug}
+              buildingName={buildingName}
+              rooms={rooms}
             />
           </div>
 
@@ -326,6 +331,8 @@ export function BuildingHeader({
               isOpen={isMobileRoomsMenuOpen}
               onClose={() => setIsMobileRoomsMenuOpen(false)}
               currentBuildingSlug={currentBuildingSlug}
+              buildingName={buildingName}
+              rooms={rooms}
             />
           </div>
         </div>
