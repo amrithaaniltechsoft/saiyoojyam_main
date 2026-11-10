@@ -1,18 +1,20 @@
 import Link from "next/link";
 import { RoomItem } from "@/data/roomsData";
-import { BedDouble, ArrowRight } from "lucide-react";
+import { BedDouble, ArrowRight, Check } from "lucide-react";
 
 interface RoomCardProps {
   room: RoomItem;
   renderFeatureIcon?: (iconName: string, className?: string) => React.ReactNode;
   onSelect?: (room: RoomItem) => void;
   showViewDetails?: boolean;
+  isSelected?: boolean;
 }
 
 export function RoomCard({
   room,
   onSelect,
   showViewDetails = true,
+  isSelected = false,
 }: RoomCardProps) {
   const hrefDateParam = room.availableFromDate
     ? `&date=${encodeURIComponent(room.availableFromDate)}&checkIn=${encodeURIComponent(room.availableFromDate)}`
@@ -113,19 +115,31 @@ export function RoomCard({
           </div>
         </div>
 
-        {/* Mobile & Tablet View Button: Simple text with underline */}
+        {/* Mobile & Tablet View Button: Simple text with underline or selected badge */}
         {showViewDetails && (
           <div className="flex lg:hidden items-center shrink-0">
-            <span className="text-xs font-semibold text-[#FF561C] underline underline-offset-2 decoration-[#FF561C]/80 hover:text-[#e0450d] transition-colors whitespace-nowrap">
-              View
-            </span>
+            {isSelected ? (
+              <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 whitespace-nowrap">
+                <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
+                <span>Selected</span>
+              </span>
+            ) : (
+              <span className="text-xs font-semibold text-[#FF561C] underline underline-offset-2 decoration-[#FF561C]/80 hover:text-[#e0450d] transition-colors whitespace-nowrap">
+                Select
+              </span>
+            )}
           </div>
         )}
 
         {/* View Details CTA: Shown on desktop */}
         {showViewDetails && (
           <div className="hidden lg:flex items-center shrink-0">
-            {onSelect ? (
+            {isSelected ? (
+              <span className="py-1.5 px-3.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                <span>Selected</span>
+              </span>
+            ) : onSelect ? (
               <button
                 type="button"
                 onClick={(e) => {
@@ -134,7 +148,7 @@ export function RoomCard({
                 }}
                 className="py-1.5 px-3.5 rounded-lg bg-[#FF561C] hover:bg-[#e0450d] text-white text-xs font-semibold hover:shadow transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 group shrink-0 whitespace-nowrap"
               >
-                <span>View Details</span>
+                <span>Select Room</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform shrink-0" />
               </button>
             ) : (

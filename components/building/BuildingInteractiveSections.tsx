@@ -7,13 +7,15 @@ import { RoomItem } from "@/data/roomsData";
 import { RoomCard } from "@/components/search/RoomCard";
 import { BookingDrawer } from "@/components/building/BookingDrawer";
 import { BuildingCtaLocation } from "@/components/building/BuildingCtaLocation";
-import { BookmarkCheck } from "lucide-react";
+import { BookmarkCheck, BedDouble } from "lucide-react";
 
 interface BuildingInteractiveSectionsProps {
   building: BuildingDetailData;
   buildingRooms: RoomItem[];
   gallery: React.ReactNode;
-  amenitiesAndFeatures: React.ReactNode;
+  amenitiesAndFeatures?: React.ReactNode;
+  amenities?: React.ReactNode;
+  features?: React.ReactNode;
 }
 
 export function BuildingInteractiveSections({
@@ -21,6 +23,8 @@ export function BuildingInteractiveSections({
   buildingRooms,
   gallery,
   amenitiesAndFeatures,
+  amenities,
+  features,
 }: BuildingInteractiveSectionsProps) {
   const searchParams = useSearchParams();
   const [selectedRoom, setSelectedRoom] = useState<RoomItem | undefined>(undefined);
@@ -28,7 +32,6 @@ export function BuildingInteractiveSections({
 
   const roomIdParam = searchParams.get("room") || searchParams.get("roomId");
   const roomTypeParam = searchParams.get("roomType");
-  const isFromRoomLink = Boolean(roomIdParam);
 
   const activeRoom: RoomItem | undefined =
     selectedRoom ||
@@ -38,7 +41,7 @@ export function BuildingInteractiveSections({
       : undefined) ||
     buildingRooms[0];
 
-  // Sync selectedRoom whenever roomIdParam changes in the URL (e.g. via Rooms dropdown)
+  // Sync selectedRoom whenever roomIdParam changes in the URL (e.g. via Rooms dropdown or URL param)
   useEffect(() => {
     if (roomIdParam) {
       const match = buildingRooms.find((r) => r.id === roomIdParam);
@@ -46,23 +49,25 @@ export function BuildingInteractiveSections({
     }
   }, [roomIdParam, buildingRooms]);
 
-  // Exclude the currently selected room so it is not duplicated in the list below
-  const otherRooms = useMemo(() => {
-    if (!activeRoom) return buildingRooms;
-    return buildingRooms.filter((r) => r.id !== activeRoom.id);
-  }, [buildingRooms, activeRoom]);
-
   const handleSelectRoom = (room: RoomItem) => {
     setSelectedRoom(room);
-    const locationSection = document.getElementById("location");
-    if (locationSection) {
-      locationSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("room", room.id);
+      window.history.replaceState({}, "", url.toString());
+    }
+    // On mobile, scroll up to the CTA box so the user can see booking details immediately
+    if (window.innerWidth < 1024) {
+      const locationSection = document.getElementById("location");
+      if (locationSection) {
+        locationSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-      {/* Left Column (8 cols): Photo Gallery + Mobile CTA + Amenities + Features + Rooms */}
+      {/* Left Column (8 cols): Photo Gallery + Mobile CTA + Amenities + Rooms + Features */}
       <div className="lg:col-span-8 flex flex-col gap-8">
         {/* Photo Gallery slot */}
         {gallery}
@@ -76,50 +81,92 @@ export function BuildingInteractiveSections({
           />
         </div>
 
-        {/* Amenities & Features slot (Server components) */}
-        {amenitiesAndFeatures}
+        {/* 1. Key Amenities (#facilities) */}
+        {amenities}
 
-        {/* Available Other Room Types & Sharing Options */}
-        {otherRooms.length > 0 && (
-          <div id="building-rooms" className="pt-6 space-y-4 scroll-mt-24">
+        {/* 2. Available Rooms in this Property (#building-rooms) */}
+        <div id="building-rooms" className="pt-2 space-y-4 scroll-mt-24">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <h2 className="text-lg sm:text-xl font-medium text-gray-950">
-                {activeRoom ? `Other Rooms in ${building.name}` : `Rooms in ${building.name}`}
-              </h2>
-              <p className="text-xs sm:text-sm text-gray-700 font-normal mt-0.5">
-                Explore alternative configurations and bed setups for this property
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-950">
+                  Available Rooms in {building.name}
+                </h2>
+                {buildingRooms.length > 0 && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-[#FF561C]">
+                    {buildingRooms.length} Room{buildingRooms.length > 1 ? "s" : ""} Available
+                  </span>
+                )}
+              </div>
+              <p className="text-xs sm:text-sm text-gray-600 font-normal mt-0.5">
+                Select any room below to view bed configuration, monthly tariff, and proceed to booking
               </p>
             </div>
-
-            {/* Mobile & Tablet: 2-column grid */}
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 lg:hidden">
-              {otherRooms.map((room) => (
-                <div
-                  key={room.id}
-                  className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:border-gray-300 transition-all flex flex-col"
-                >
-                  <RoomCard
-                    room={room}
-                    showViewDetails={true}
-                    onSelect={handleSelectRoom}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Desktop: Stacked list with divider lines */}
-            <div className="hidden lg:flex flex-col divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden bg-white">
-              {otherRooms.map((room) => (
-                <RoomCard
-                  key={room.id}
-                  room={room}
-                  showViewDetails={true}
-                  onSelect={handleSelectRoom}
-                />
-              ))}
-            </div>
           </div>
-        )}
+
+          {buildingRooms.length > 0 ? (
+            <>
+              {/* Mobile & Tablet: 1 column on phones, 2 columns on tablet */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:hidden">
+                {buildingRooms.map((room) => {
+                  const isSelected = room.id === activeRoom?.id;
+                  return (
+                    <div
+                      key={room.id}
+                      className={`border rounded-xl overflow-hidden bg-white transition-all flex flex-col ${
+                        isSelected
+                          ? "border-[#FF561C] ring-2 ring-[#FF561C]/25 bg-orange-50/15 shadow-sm"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <RoomCard
+                        room={room}
+                        showViewDetails={true}
+                        isSelected={isSelected}
+                        onSelect={handleSelectRoom}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop: Stacked list with divider lines */}
+              <div className="hidden lg:flex flex-col divide-y divide-gray-200 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-xs">
+                {buildingRooms.map((room) => {
+                  const isSelected = room.id === activeRoom?.id;
+                  return (
+                    <div
+                      key={room.id}
+                      className={`transition-colors ${
+                        isSelected
+                          ? "bg-orange-50/30 border-l-4 border-l-[#FF561C]"
+                          : "hover:bg-gray-50/50"
+                      }`}
+                    >
+                      <RoomCard
+                        room={room}
+                        showViewDetails={true}
+                        isSelected={isSelected}
+                        onSelect={handleSelectRoom}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
+              <BedDouble className="w-8 h-8 text-gray-400 mx-auto mb-2 stroke-[1.5]" />
+              <h3 className="text-base font-bold text-gray-950">No Rooms Available</h3>
+              <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+                There are currently no rooms listed in this property. Enquire via WhatsApp for upcoming vacancies.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* 3. Detailed Features & Specifications (#rooms) or legacy combined block */}
+        {features || amenitiesAndFeatures}
       </div>
 
       {/* Right Column (4 cols): Sticky CTA Box & Google Map Location on Desktop */}

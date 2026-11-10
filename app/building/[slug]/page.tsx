@@ -161,18 +161,13 @@ export default async function BuildingPage({ params, searchParams }: BuildingPag
             building={building}
             buildingRooms={buildingRooms}
             gallery={<BuildingGallery key="building-gallery" building={building} />}
-            amenitiesAndFeatures={
-              <div key="amenities-and-features" className="space-y-8 divide-y divide-gray-200">
-                {/* Key Amenities (#facilities) */}
-                <BuildingAmenities amenities={building.amenitiesGrid} />
-
-                {/* Detailed Features & Room specifications (#rooms) */}
-                <BuildingFeatures
-                  features={building.featuresList}
-                  title="Hostel Amenities & Living Facilities"
-                  subtitle="Detailed specifications for this property"
-                />
-              </div>
+            amenities={<BuildingAmenities amenities={building.amenitiesGrid} />}
+            features={
+              <BuildingFeatures
+                features={building.featuresList}
+                title="Hostel Amenities & Living Facilities"
+                subtitle="Detailed specifications for this property"
+              />
             }
           />
         </div>
