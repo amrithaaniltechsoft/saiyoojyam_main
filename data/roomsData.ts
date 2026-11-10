@@ -9,9 +9,10 @@ export interface RoomItem {
   roomTypeId?: number;
   roomTypeName?: string; // from saiyoojyam_room_type.room_type_name
   roomTypeSlug?: string;
+  room_type_capacity?: number;
   isAc?: boolean;
-  capacity?: number; // from saiyoojyam_rooms.rooms_capacity
-  rooms_capacity?: number; // from saiyoojyam_rooms.rooms_capacity
+  capacity?: number; // capacity from room type
+  rooms_capacity?: number; // legacy room capacity
   totalBeds?: number;
   occupiedBeds?: number;
   buildingId?: number;
