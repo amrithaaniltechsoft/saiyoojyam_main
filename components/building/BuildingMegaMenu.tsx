@@ -109,14 +109,6 @@ export function BuildingMegaMenu({
     };
   }, [isOpen, currentBuildingSlug]);
 
-  if (!isOpen) return null;
-
-  // Determine display building title
-  const displayBuildingTitle =
-    buildingName ||
-    fetchedBuildingName ||
-    getFallbackBuildingName(currentBuildingSlug);
-
   // Derive unique categories from rooms if available
   const availableCategories = useMemo(() => {
     if (!internalRooms || internalRooms.length === 0) return [];
@@ -160,6 +152,14 @@ export function BuildingMegaMenu({
       );
     });
   }, [internalRooms, selectedCategory]);
+
+  if (!isOpen) return null;
+
+  // Determine display building title
+  const displayBuildingTitle =
+    buildingName ||
+    fetchedBuildingName ||
+    getFallbackBuildingName(currentBuildingSlug);
 
   // Handle clicking a specific room
   const handleRoomClick = (room: RoomItem) => {
