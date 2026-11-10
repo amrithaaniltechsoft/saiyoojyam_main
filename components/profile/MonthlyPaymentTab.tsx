@@ -314,6 +314,11 @@ export function MonthlyPaymentTab({
                           <Clock className="w-3 h-3" />
                           Partially Paid · Balance Due
                         </span>
+                      ) : bill.status === "Due Today" ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[11px] font-semibold flex items-center gap-1 border border-orange-200">
+                          <Clock className="w-3 h-3 text-orange-600" />
+                          Due Today ({bill.due_date})
+                        </span>
                       ) : (
                         <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold flex items-center gap-1 border border-amber-200">
                           <Clock className="w-3 h-3" />
