@@ -4,7 +4,13 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { X, MapPin, Calendar, BedDouble, Search, ChevronDown, Check } from "lucide-react";
 import { FancyDatePicker } from "@/components/ui/FancyDatePicker";
 import { locationOptions, roomTypeOptions, DynamicRoomTypeOption } from "@/components/search/OverlaySearchFilter";
-import { DynamicBuildingOption } from "@/components/search/TowerFilterSidebar";
+import {
+  DynamicBuildingOption,
+  PREMIER_FILTERS,
+  ANNEX_FILTERS,
+  TOWERS_FILTERS,
+  TowerRoomFilter,
+} from "@/components/search/TowerFilterSidebar";
 
 interface MobileSearchDrawerProps {
   isOpen: boolean;
@@ -108,6 +114,18 @@ export function MobileSearchDrawer({
       const bCleanSlug = bSlug.replace(/^saiyoojyam[-_]/i, "");
       const bName = String(b.name || b.label || b.building_name || "").toLowerCase();
 
+      const isTowerMatch =
+        (locClean.includes("tower") || locClean === "towers-1-2" || locClean === "towers") &&
+        (bCleanSlug.includes("tower") || bName.includes("tower"));
+
+      const isAnnexMatch =
+        locClean.includes("annex") &&
+        (bCleanSlug.includes("annex") || bName.includes("annex"));
+
+      const isPremierMatch =
+        locClean.includes("premier") &&
+        (bCleanSlug.includes("premier") || bName.includes("premier"));
+
       if (
         loc === bId ||
         loc === bSlug ||
@@ -115,7 +133,10 @@ export function MobileSearchDrawer({
         loc === `saiyoojyam-${bSlug}` ||
         bSlug === `saiyoojyam-${loc}` ||
         loc === bName ||
-        (bName && (bName.includes(locClean) || locClean.includes(bName)))
+        (bName && (bName.includes(locClean) || locClean.includes(bName))) ||
+        isTowerMatch ||
+        isAnnexMatch ||
+        isPremierMatch
       ) {
         return {
           id: Number(b.building_id || b.id) || null,
@@ -161,6 +182,16 @@ export function MobileSearchDrawer({
       if (!isAll) {
         const rtBId = Number(rt.building_id || (rt as any).room_type_building_id || 0);
         const rtBSlug = String((rt as any).building_slug || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "");
+        const rtBName = String((rt as any).building_name || "").toLowerCase();
+
+        const isTowerLoc = loc.includes("tower") || targetBSlug.includes("tower");
+        const isTowerRt = rtBSlug.includes("tower") || rtBName.includes("tower") || rtBId === 3 || rtBId === 4;
+
+        const isAnnexLoc = loc.includes("annex") || targetBSlug.includes("annex");
+        const isAnnexRt = rtBSlug.includes("annex") || rtBName.includes("annex") || rtBId === 1;
+
+        const isPremierLoc = loc.includes("premier") || targetBSlug.includes("premier");
+        const isPremierRt = rtBSlug.includes("premier") || rtBName.includes("premier");
 
         let matches = false;
         if (targetBId && rtBId > 0 && rtBId === targetBId) {
@@ -168,6 +199,12 @@ export function MobileSearchDrawer({
         } else if (targetBSlug && rtBSlug && rtBSlug === targetBSlug) {
           matches = true;
         } else if (targetBSlug && (rtBSlug.includes(targetBSlug) || targetBSlug.includes(rtBSlug))) {
+          matches = true;
+        } else if (isTowerLoc && isTowerRt) {
+          matches = true;
+        } else if (isAnnexLoc && isAnnexRt) {
+          matches = true;
+        } else if (isPremierLoc && isPremierRt) {
           matches = true;
         } else if (!targetBId && !targetBSlug) {
           const locClean = loc.replace(/^saiyoojyam[-_]/i, "");
@@ -198,6 +235,31 @@ export function MobileSearchDrawer({
         id: rt.id || (rt as any).room_type_id,
       });
     }
+
+    // Fallback: If no DB room types matched this building, use predefined room categories
+    if (result.length <= 1 && !isAll) {
+      let fallbacks: TowerRoomFilter[] = [];
+      if (loc.includes("premier") || targetBSlug.includes("premier")) {
+        fallbacks = PREMIER_FILTERS;
+      } else if (loc.includes("annex") || targetBSlug.includes("annex")) {
+        fallbacks = ANNEX_FILTERS;
+      } else if (loc.includes("tower") || targetBSlug.includes("tower")) {
+        fallbacks = TOWERS_FILTERS;
+      }
+
+      for (const fb of fallbacks) {
+        const rawVal = fb.id;
+        const valKey = rawVal.toLowerCase();
+        if (seenValues.has(valKey)) continue;
+        seenValues.add(valKey);
+        result.push({
+          value: rawVal,
+          label: fb.label,
+          id: fb.id,
+        });
+      }
+    }
+
     return result;
   }, [roomTypes, fetchedRoomTypes, tempLocation, activeBuildingInfo]);
 
@@ -206,39 +268,10 @@ export function MobileSearchDrawer({
     if (!rtVal || rtVal === "all") return true;
     if (!locVal || locVal === "all") return true;
 
-    const raw =
-      roomTypes && roomTypes.length > 0
-        ? roomTypes
-        : fetchedRoomTypes && fetchedRoomTypes.length > 0
-        ? fetchedRoomTypes
-        : roomTypeOptions;
-
-    const locClean = locVal.toString().trim().toLowerCase().replace(/^saiyoojyam[-_]/i, "");
-
-    const bMatch = (availableBuildings as any[]).find((b: any) => {
-      const bId = String(b.id || b.building_id || "").toLowerCase();
-      const bSlug = String(b.slug || b.building_slug || b.value || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "");
-      return locClean === bId || locClean === bSlug;
-    });
-
-    const targetId = bMatch ? Number(bMatch.building_id || bMatch.id) : (/^\d+$/.test(locClean) ? Number(locClean) : null);
-    const targetSlug = bMatch ? String(bMatch.slug || bMatch.building_slug || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "") : locClean;
-
     const rtLower = rtVal.toLowerCase();
-
-    return raw.some((rt: any) => {
-      const rtBId = Number(rt.building_id || rt.room_type_building_id || 0);
-      const rtBSlug = String(rt.building_slug || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "");
-
-      const matchesBuilding =
-        (targetId && rtBId === targetId) ||
-        (targetSlug && rtBSlug === targetSlug) ||
-        (!targetId && !targetSlug);
-
-      if (!matchesBuilding) return false;
-
-      const v = String(rt.slug || rt.value || rt.id || "").toLowerCase();
-      const l = String(rt.label || rt.name || rt.room_type_name || "").toLowerCase();
+    return dynamicRoomTypeOptions.some((opt) => {
+      const v = opt.value.toLowerCase();
+      const l = opt.label.toLowerCase();
       return v === rtLower || l === rtLower;
     });
   };
