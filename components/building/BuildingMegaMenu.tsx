@@ -164,32 +164,43 @@ export function BuildingMegaMenu({
   // Handle clicking a specific room
   const handleRoomClick = (room: RoomItem) => {
     onClose();
-    if (
-      typeof window !== "undefined" &&
-      window.location.pathname.includes(`/building/${currentBuildingSlug}`)
-    ) {
-      // User is already on this building's page: update query param and scroll smoothly
-      const targetElement =
-        document.getElementById("location") ||
-        document.getElementById("building-rooms");
+    const targetUrl = `/building/${currentBuildingSlug}?room=${encodeURIComponent(
+      room.id
+    )}#location`;
 
-      router.push(
-        `/building/${currentBuildingSlug}?room=${encodeURIComponent(
-          room.id
-        )}#location`
-      );
+    router.push(targetUrl);
 
-      if (targetElement) {
-        setTimeout(() => {
+    if (typeof window !== "undefined") {
+      setTimeout(() => {
+        const targetElement =
+          document.getElementById("location") ||
+          document.getElementById("building-rooms");
+        if (targetElement) {
           targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 100);
-      }
-    } else {
-      router.push(
-        `/building/${currentBuildingSlug}?room=${encodeURIComponent(
-          room.id
-        )}#location`
-      );
+        }
+      }, 100);
+    }
+  };
+
+  // Handle clicking a room category/filter (fallback)
+  const handleCategoryClick = (item: TowerRoomFilter) => {
+    onClose();
+    const filterVal = item.shares ? String(item.shares) : item.id;
+    const targetUrl = `/building/${currentBuildingSlug}?roomType=${encodeURIComponent(
+      filterVal
+    )}#location`;
+
+    router.push(targetUrl);
+
+    if (typeof window !== "undefined") {
+      setTimeout(() => {
+        const targetElement =
+          document.getElementById("location") ||
+          document.getElementById("building-rooms");
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
     }
   };
 
@@ -367,14 +378,7 @@ export function BuildingMegaMenu({
               <button
                 key={item.id}
                 type="button"
-                onClick={() => {
-                  onClose();
-                  router.push(
-                    `/search?location=${encodeURIComponent(
-                      currentBuildingSlug
-                    )}&filter=${encodeURIComponent(item.id)}`
-                  );
-                }}
+                onClick={() => handleCategoryClick(item)}
                 className="flex items-center justify-between gap-2 hover:text-[#FF561C] hover:bg-orange-50/50 p-1.5 rounded-lg transition-colors text-left cursor-pointer group"
               >
                 <div className="flex items-center gap-2 min-w-0">

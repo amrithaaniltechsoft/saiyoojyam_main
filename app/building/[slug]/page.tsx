@@ -148,7 +148,7 @@ export default async function BuildingPage({ params, searchParams }: BuildingPag
       <BuildingHeader
         buildingName={building.name}
         whatsappNumber={building.bookingFormWhatsappNumber}
-        currentBuildingSlug={building.slug}
+        currentBuildingSlug={resolvedParams.slug || building.slug}
         rooms={buildingRooms}
       />
 

@@ -33,21 +33,59 @@ export function BuildingInteractiveSections({
   const roomIdParam = searchParams.get("room") || searchParams.get("roomId");
   const roomTypeParam = searchParams.get("roomType");
 
+  const findMatchingRoom = (param: string | null): RoomItem | undefined => {
+    if (!param) return undefined;
+    const clean = param.trim().toLowerCase();
+    const cleanNum = clean.replace(/^room[-_]/i, "");
+    return buildingRooms.find(
+      (r) =>
+        (r.id && r.id.toLowerCase() === clean) ||
+        (r.id && r.id.toLowerCase() === `room-${cleanNum}`) ||
+        (r.dbId !== undefined && String(r.dbId) === cleanNum) ||
+        (r.roomNumber && r.roomNumber.toLowerCase() === clean)
+    );
+  };
+
+  const findMatchingRoomByType = (typeParam: string | null): RoomItem | undefined => {
+    if (!typeParam || typeParam === "all") return undefined;
+    const clean = typeParam.trim().toLowerCase();
+    return buildingRooms.find(
+      (r) =>
+        String(r.roomType).toLowerCase() === clean ||
+        String(r.capacity) === clean ||
+        (r.roomTypeSlug && r.roomTypeSlug.toLowerCase() === clean) ||
+        (r.roomTypeName && r.roomTypeName.toLowerCase().includes(clean))
+    );
+  };
+
   const activeRoom: RoomItem | undefined =
     selectedRoom ||
-    (roomIdParam ? buildingRooms.find((r) => r.id === roomIdParam) : undefined) ||
-    (roomTypeParam && roomTypeParam !== "all"
-      ? buildingRooms.find((r) => r.roomType === roomTypeParam)
-      : undefined) ||
+    findMatchingRoom(roomIdParam) ||
+    findMatchingRoomByType(roomTypeParam) ||
     buildingRooms[0];
 
-  // Sync selectedRoom whenever roomIdParam changes in the URL (e.g. via Rooms dropdown or URL param)
+  // Sync selectedRoom whenever roomIdParam or roomTypeParam changes in the URL
   useEffect(() => {
     if (roomIdParam) {
-      const match = buildingRooms.find((r) => r.id === roomIdParam);
+      const match = findMatchingRoom(roomIdParam);
+      if (match) setSelectedRoom(match);
+    } else if (roomTypeParam) {
+      const match = findMatchingRoomByType(roomTypeParam);
       if (match) setSelectedRoom(match);
     }
-  }, [roomIdParam, buildingRooms]);
+  }, [roomIdParam, roomTypeParam, buildingRooms]);
+
+  // Smooth scroll to #location on mount or URL param change if hash is #location
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash === "#location") {
+      const el = document.getElementById("location");
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 120);
+      }
+    }
+  }, [roomIdParam, roomTypeParam]);
 
   const handleSelectRoom = (room: RoomItem) => {
     setSelectedRoom(room);

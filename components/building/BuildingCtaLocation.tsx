@@ -40,13 +40,36 @@ export function BuildingCtaLocation({
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
+  const findMatchingRoom = (param: string | null): RoomItem | undefined => {
+    if (!param) return undefined;
+    const clean = param.trim().toLowerCase();
+    const cleanNum = clean.replace(/^room[-_]/i, "");
+    return buildingRooms.find(
+      (r) =>
+        (r.id && r.id.toLowerCase() === clean) ||
+        (r.id && r.id.toLowerCase() === `room-${cleanNum}`) ||
+        (r.dbId !== undefined && String(r.dbId) === cleanNum) ||
+        (r.roomNumber && r.roomNumber.toLowerCase() === clean)
+    );
+  };
+
+  const findMatchingRoomByType = (typeParam: string | null): RoomItem | undefined => {
+    if (!typeParam || typeParam === "all") return undefined;
+    const clean = typeParam.trim().toLowerCase();
+    return buildingRooms.find(
+      (r) =>
+        String(r.roomType).toLowerCase() === clean ||
+        String(r.capacity) === clean ||
+        (r.roomTypeSlug && r.roomTypeSlug.toLowerCase() === clean) ||
+        (r.roomTypeName && r.roomTypeName.toLowerCase().includes(clean))
+    );
+  };
+
   // Determine active room: explicit prop > roomId query param > roomType query param > first available room in building
   const activeRoom: RoomItem | undefined =
     selectedRoom ||
-    (roomIdParam ? buildingRooms.find((r) => r.id === roomIdParam) : undefined) ||
-    (roomTypeParam && roomTypeParam !== "all"
-      ? buildingRooms.find((r) => r.roomType === roomTypeParam)
-      : undefined) ||
+    findMatchingRoom(roomIdParam) ||
+    findMatchingRoomByType(roomTypeParam) ||
     buildingRooms[0];
 
   const roomCapacity =

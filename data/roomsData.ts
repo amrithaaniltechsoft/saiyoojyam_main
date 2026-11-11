@@ -1,5 +1,6 @@
 export interface RoomItem {
   id: string;
+  dbId?: number;
   roomNumber: string; // e.g. "20A", "10B", "30A", "20B"
   apartmentName: string; // e.g. "Saiyoojyam Premier"
   buildingKey: "premier" | "annex" | "towers" | string;
