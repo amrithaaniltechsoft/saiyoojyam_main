@@ -165,9 +165,47 @@ export function MobileSearchDrawer({
 
     const loc = (tempLocation || "").toString().trim().toLowerCase();
     const isAll = !loc || loc === "all";
+    const locClean = loc.replace(/^saiyoojyam[-_]/i, "");
 
-    const targetBId = activeBuildingInfo?.id ?? null;
-    const targetBSlug = activeBuildingInfo?.slug ?? "";
+    const isTowerLoc = locClean.includes("tower") || locClean === "towers-1-2" || locClean === "towers";
+    const isAnnexLoc = locClean.includes("annex");
+    const isPremierLoc = locClean.includes("premier");
+
+    // Collect all valid building IDs and slugs matching this location
+    const allowedBuildingIds = new Set<number>();
+    const allowedBuildingSlugs = new Set<string>();
+
+    if (!isAll) {
+      for (const b of availableBuildings as any[]) {
+        if (!b) continue;
+        const bId = Number(b.building_id || b.id || 0);
+        const rawSlug = String(b.slug || b.building_slug || b.value || "").toLowerCase();
+        const bSlug = rawSlug.replace(/^saiyoojyam[-_]/i, "");
+        const bName = String(b.name || b.label || b.building_name || "").toLowerCase();
+
+        let matched = false;
+        if (bId > 0 && String(bId) === locClean) {
+          matched = true;
+        } else if (bSlug === locClean || rawSlug === loc || bSlug === `saiyoojyam-${locClean}`) {
+          matched = true;
+        } else if (isTowerLoc && (bSlug.includes("tower") || bName.includes("tower"))) {
+          matched = true;
+        } else if (isAnnexLoc && (bSlug.includes("annex") || bName.includes("annex"))) {
+          matched = true;
+        } else if (isPremierLoc && (bSlug.includes("premier") || bName.includes("premier"))) {
+          matched = true;
+        }
+
+        if (matched) {
+          if (bId > 0) allowedBuildingIds.add(bId);
+          if (bSlug) allowedBuildingSlugs.add(bSlug);
+        }
+      }
+
+      if (allowedBuildingIds.size === 0 && /^\d+$/.test(locClean)) {
+        allowedBuildingIds.add(Number(locClean));
+      }
+    }
 
     for (const rt of raw as any[]) {
       if (!rt) continue;
@@ -178,32 +216,22 @@ export function MobileSearchDrawer({
         const rtBSlug = String((rt as any).building_slug || "").toLowerCase().replace(/^saiyoojyam[-_]/i, "");
         const rtBName = String((rt as any).building_name || "").toLowerCase();
 
-        const isTowerLoc = loc.includes("tower") || targetBSlug.includes("tower");
-        const isTowerRt = rtBSlug.includes("tower") || rtBName.includes("tower") || rtBId === 3 || rtBId === 4;
-
-        const isAnnexLoc = loc.includes("annex") || targetBSlug.includes("annex");
-        const isAnnexRt = rtBSlug.includes("annex") || rtBName.includes("annex") || rtBId === 1;
-
-        const isPremierLoc = loc.includes("premier") || targetBSlug.includes("premier");
-        const isPremierRt = rtBSlug.includes("premier") || rtBName.includes("premier");
-
         let matches = false;
-        if (targetBId && rtBId > 0 && rtBId === targetBId) {
-          matches = true;
-        } else if (targetBSlug && rtBSlug && rtBSlug === targetBSlug) {
-          matches = true;
-        } else if (targetBSlug && (rtBSlug.includes(targetBSlug) || targetBSlug.includes(rtBSlug))) {
-          matches = true;
-        } else if (isTowerLoc && isTowerRt) {
-          matches = true;
-        } else if (isAnnexLoc && isAnnexRt) {
-          matches = true;
-        } else if (isPremierLoc && isPremierRt) {
-          matches = true;
-        } else if (!targetBId && !targetBSlug) {
-          const locClean = loc.replace(/^saiyoojyam[-_]/i, "");
-          if (rtBId > 0 && String(rtBId) === locClean) matches = true;
-          if (rtBSlug && (rtBSlug === locClean || locClean.includes(rtBSlug))) matches = true;
+
+        if (rtBId > 0) {
+          if (allowedBuildingIds.has(rtBId)) {
+            matches = true;
+          }
+        } else if (rtBSlug || rtBName) {
+          if (allowedBuildingSlugs.has(rtBSlug)) {
+            matches = true;
+          } else if (isTowerLoc && (rtBSlug.includes("tower") || rtBName.includes("tower"))) {
+            matches = true;
+          } else if (isAnnexLoc && (rtBSlug.includes("annex") || rtBName.includes("annex"))) {
+            matches = true;
+          } else if (isPremierLoc && (rtBSlug.includes("premier") || rtBName.includes("premier"))) {
+            matches = true;
+          }
         }
 
         if (!matches) {
@@ -231,7 +259,7 @@ export function MobileSearchDrawer({
     }
 
     return result;
-  }, [roomTypes, fetchedRoomTypes, tempLocation, activeBuildingInfo]);
+  }, [roomTypes, fetchedRoomTypes, tempLocation, availableBuildings]);
 
   // Check if room type is valid for location
   const checkRoomTypeValidForLocation = (locVal: string, rtVal: string): boolean => {
