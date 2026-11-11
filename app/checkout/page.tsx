@@ -297,6 +297,7 @@ export default async function CheckoutPaymentPage({ searchParams }: CheckoutPaym
               room={room}
               totalPrice={totalPrice}
               monthlyRent={calculatedRent}
+              baseMonthlyRent={numericMonthlyRent}
               admissionFees={admissionFees}
               cautionDeposit={cautionDeposit}
               checkInParam={checkInParam}

@@ -14,6 +14,7 @@ interface CheckoutBookingSectionProps {
   room?: RoomItem;
   totalPrice: number;
   monthlyRent?: number;
+  baseMonthlyRent?: number;
   admissionFees?: number;
   cautionDeposit?: number;
   checkInParam: string;
@@ -27,6 +28,7 @@ export function CheckoutBookingSection({
   room,
   totalPrice,
   monthlyRent,
+  baseMonthlyRent,
   admissionFees = 0,
   cautionDeposit = 0,
   checkInParam,
@@ -289,7 +291,10 @@ export function CheckoutBookingSection({
     formData.append("duration", durationParam || "Long Term");
     formData.append("cautionDeposit", String(cautionDeposit || 0));
     formData.append("admissionFees", String(admissionFees || 0));
-    formData.append("monthlyRent", String(monthlyRent || 0));
+    const effectiveBaseRent = baseMonthlyRent || ((room as any)?.price ? Number(String((room as any).price).replace(/[^\d.]/g, "")) : 0);
+    formData.append("monthlyRent", String(effectiveBaseRent || monthlyRent || 0));
+    formData.append("baseMonthlyRent", String(effectiveBaseRent || 0));
+    formData.append("calculatedRent", String(monthlyRent || 0));
 
     if (idProofFile) {
       formData.append("inmates_id_proof", idProofFile);
