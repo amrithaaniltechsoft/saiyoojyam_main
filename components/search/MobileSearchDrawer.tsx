@@ -4,13 +4,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { X, MapPin, Calendar, BedDouble, Search, ChevronDown, Check } from "lucide-react";
 import { FancyDatePicker } from "@/components/ui/FancyDatePicker";
 import { locationOptions, roomTypeOptions, DynamicRoomTypeOption } from "@/components/search/OverlaySearchFilter";
-import {
-  DynamicBuildingOption,
-  PREMIER_FILTERS,
-  ANNEX_FILTERS,
-  TOWERS_FILTERS,
-  TowerRoomFilter,
-} from "@/components/search/TowerFilterSidebar";
+import { DynamicBuildingOption } from "@/components/search/TowerFilterSidebar";
 
 interface MobileSearchDrawerProps {
   isOpen: boolean;
@@ -234,30 +228,6 @@ export function MobileSearchDrawer({
         label: label,
         id: rt.id || (rt as any).room_type_id,
       });
-    }
-
-    // Fallback: If no DB room types matched this building, use predefined room categories
-    if (result.length <= 1 && !isAll) {
-      let fallbacks: TowerRoomFilter[] = [];
-      if (loc.includes("premier") || targetBSlug.includes("premier")) {
-        fallbacks = PREMIER_FILTERS;
-      } else if (loc.includes("annex") || targetBSlug.includes("annex")) {
-        fallbacks = ANNEX_FILTERS;
-      } else if (loc.includes("tower") || targetBSlug.includes("tower")) {
-        fallbacks = TOWERS_FILTERS;
-      }
-
-      for (const fb of fallbacks) {
-        const rawVal = fb.id;
-        const valKey = rawVal.toLowerCase();
-        if (seenValues.has(valKey)) continue;
-        seenValues.add(valKey);
-        result.push({
-          value: rawVal,
-          label: fb.label,
-          id: fb.id,
-        });
-      }
     }
 
     return result;

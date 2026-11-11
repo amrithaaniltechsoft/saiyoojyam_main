@@ -13,12 +13,6 @@ import {
   X,
 } from "lucide-react";
 import { FancyDatePicker } from "@/components/ui/FancyDatePicker";
-import {
-  PREMIER_FILTERS,
-  ANNEX_FILTERS,
-  TOWERS_FILTERS,
-  TowerRoomFilter,
-} from "@/components/search/TowerFilterSidebar";
 
 export interface DynamicRoomTypeOption {
   value: string;
@@ -380,30 +374,6 @@ export function SearchFilter({
         id: rt.id || rt.room_type_id,
         building_id: rt.building_id,
       });
-    }
-
-    // Fallback: If no DB room types matched this building, use predefined room categories
-    if (result.length <= 1 && !isAll) {
-      let fallbacks: TowerRoomFilter[] = [];
-      if (loc.includes("premier") || targetBSlug.includes("premier")) {
-        fallbacks = PREMIER_FILTERS;
-      } else if (loc.includes("annex") || targetBSlug.includes("annex")) {
-        fallbacks = ANNEX_FILTERS;
-      } else if (loc.includes("tower") || targetBSlug.includes("tower")) {
-        fallbacks = TOWERS_FILTERS;
-      }
-
-      for (const fb of fallbacks) {
-        const rawVal = fb.id;
-        const valKey = rawVal.toLowerCase();
-        if (seenValues.has(valKey)) continue;
-        seenValues.add(valKey);
-        result.push({
-          value: rawVal,
-          label: fb.label,
-          id: fb.id,
-        });
-      }
     }
 
     return result;

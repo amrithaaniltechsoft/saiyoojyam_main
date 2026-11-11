@@ -3,9 +3,6 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { X, Building2, ChevronDown, Check } from "lucide-react";
 import {
-  PREMIER_FILTERS,
-  ANNEX_FILTERS,
-  TOWERS_FILTERS,
   TowerRoomFilter,
   DynamicBuildingOption,
 } from "@/components/search/TowerFilterSidebar";
@@ -123,12 +120,16 @@ export function MobileRoomFilterDrawer({
     .filter((b) => selectedBuilding === "all" || b.id === selectedBuilding);
 
   const getFiltersForBuilding = (bId: string): TowerRoomFilter[] => {
-    if (buildingCategories && buildingCategories[bId] && buildingCategories[bId].length > 0) {
+    if (!buildingCategories) return [];
+    if (buildingCategories[bId] && buildingCategories[bId].length > 0) {
       return buildingCategories[bId];
     }
-    if (bId === "premier") return PREMIER_FILTERS;
-    if (bId === "annex") return ANNEX_FILTERS;
-    if (bId.includes("tower") || bId === "t1" || bId === "t2" || bId === "towers") return TOWERS_FILTERS;
+    const target = bId.toLowerCase();
+    for (const [key, val] of Object.entries(buildingCategories)) {
+      if (key.toLowerCase() === target && Array.isArray(val) && val.length > 0) {
+        return val;
+      }
+    }
     return [];
   };
 

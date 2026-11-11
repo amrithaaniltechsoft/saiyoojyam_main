@@ -8,9 +8,6 @@ import { BottomFeatureHighlights } from "@/components/search/BottomFeatureHighli
 import { OverlaySearchFilter } from "@/components/search/OverlaySearchFilter";
 import {
   TowerFilterSidebar,
-  PREMIER_FILTERS,
-  TOWERS_FILTERS,
-  ANNEX_FILTERS,
   TowerRoomFilter,
   DynamicBuildingOption,
 } from "@/components/search/TowerFilterSidebar";
@@ -228,12 +225,7 @@ export function SearchResultsView({
   // Combined & Filtered rooms calculation
   const filteredRooms = useMemo(() => {
     const flatDynamicFilters = Object.values(dynamicCategories).flat();
-    const allFilters = [
-      ...flatDynamicFilters,
-      ...PREMIER_FILTERS,
-      ...ANNEX_FILTERS,
-      ...TOWERS_FILTERS,
-    ];
+    const allFilters = flatDynamicFilters;
     const activeTowerObj = selectedTowerFilter
       ? allFilters.find((f) => f.id === selectedTowerFilter)
       : null;

@@ -172,14 +172,16 @@ export function TowerFilterSidebar({
   }, [buildingOptions, selectedBuilding]);
 
   const getFiltersForBuilding = (bId: string): TowerRoomFilter[] => {
-    if (buildingCategories && buildingCategories[bId] && buildingCategories[bId].length > 0) {
+    if (!buildingCategories) return [];
+    if (buildingCategories[bId] && buildingCategories[bId].length > 0) {
       return buildingCategories[bId];
     }
-    if (bId === "premier") return PREMIER_FILTERS;
-    if (bId === "annex") return ANNEX_FILTERS;
-    if (bId === "tower-1" || bId.includes("tower-1") || bId === "t1") return TOWER_1_FILTERS;
-    if (bId === "tower-2" || bId.includes("tower-2") || bId === "t2") return [...TOWER_2_FILTERS_COL1, ...TOWER_2_FILTERS_COL2];
-    if (bId === "towers" || bId.includes("tower")) return TOWERS_FILTERS;
+    const target = bId.toLowerCase();
+    for (const [key, val] of Object.entries(buildingCategories)) {
+      if (key.toLowerCase() === target && Array.isArray(val) && val.length > 0) {
+        return val;
+      }
+    }
     return [];
   };
 

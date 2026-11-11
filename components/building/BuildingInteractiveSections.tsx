@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { BuildingDetailData } from "@/data/buildingsData";
 import { RoomItem } from "@/data/roomsData";
@@ -8,12 +8,6 @@ import { RoomCard } from "@/components/search/RoomCard";
 import { BookingDrawer } from "@/components/building/BookingDrawer";
 import { BuildingCtaLocation } from "@/components/building/BuildingCtaLocation";
 import { BookmarkCheck, BedDouble } from "lucide-react";
-import {
-  TOWERS_FILTERS,
-  ANNEX_FILTERS,
-  PREMIER_FILTERS,
-  TowerRoomFilter,
-} from "@/components/search/TowerFilterSidebar";
 
 interface BuildingInteractiveSectionsProps {
   building: BuildingDetailData;
@@ -39,102 +33,13 @@ export function BuildingInteractiveSections({
   const roomIdParam = searchParams.get("room") || searchParams.get("roomId");
   const roomTypeParam = searchParams.get("roomType");
 
-  // Fallback room items when buildingRooms from API is empty
-  const fallbackRooms = useMemo<RoomItem[]>(() => {
-    if (buildingRooms && buildingRooms.length > 0) return [];
-
-    let filters: TowerRoomFilter[] = [];
-    const bSlug = (building.slug || "").toLowerCase();
-    if (bSlug.includes("tower")) {
-      filters = TOWERS_FILTERS;
-    } else if (bSlug.includes("annex")) {
-      filters = ANNEX_FILTERS;
-    } else if (bSlug.includes("premier")) {
-      filters = PREMIER_FILTERS;
-    }
-
-    const todayStr = new Date().toISOString().split("T")[0];
-
-    return filters.map((f, idx) => {
-      const shares = f.shares || 4;
-      const isAc = Boolean(f.isAc);
-      const rent = f.price
-        ? Number(f.price)
-        : shares === 1
-        ? 8500
-        : shares === 2
-        ? 7000
-        : shares === 3
-        ? 6500
-        : shares === 4
-        ? 6000
-        : 5500;
-
-      return {
-        id: f.id,
-        dbId: idx + 1,
-        roomNumber: f.label.replace(/^Tower\s*\d+\s*:\s*/i, ""),
-        apartmentName: building.name,
-        buildingKey: building.slug,
-        buildingId: bSlug.includes("tower") ? 4 : bSlug.includes("premier") ? 3 : 1,
-        buildingName: building.name,
-        subHeaderLocation: building.tagline || building.address || "Kakkanad, Kochi",
-        buildingAddress: building.address,
-        address: building.address,
-        title: f.label,
-        roomType: String(shares),
-        roomTypeName: f.label,
-        roomTypeSlug: f.id,
-        rooms_capacity: shares,
-        roomsCapacity: shares,
-        capacity: shares,
-        badgeCategory: isAc ? "AC Room" : "",
-        isAc,
-        floorLevel: f.label.startsWith("Tower 1") ? "Tower 1" : f.label.startsWith("Tower 2") ? "Tower 2" : "Level 1",
-        availableFromDate: todayStr,
-        availableFromDisplay: "Available Now",
-        bedsFreeText: `${shares} Beds Free`,
-        bedsFreeCount: shares,
-        totalBeds: shares,
-        occupiedBeds: 0,
-        bedLayoutIcons: Array(shares).fill("single"),
-        orientation: shares <= 2 ? "East Facing" : "Courtyard View",
-        wingInfo: building.name,
-        levelTag: f.label.startsWith("Tower 1") ? "Tower 1" : f.label.startsWith("Tower 2") ? "Tower 2" : "Level 1",
-        features: [
-          { name: isAc ? "Split AC" : "Ceiling Fan & Cross Vent", icon: "Wind" },
-          { name: "Attached Bath", icon: "ShowerHead" },
-          { name: "Homely Food & Tiffin", icon: "Utensils" },
-          { name: "Inverter Wi-Fi", icon: "Wifi" },
-        ],
-        includesText: "Includes Breakfast, Lunch & Dinner",
-        rentMonthly: rent.toLocaleString("en-IN"),
-        rentPrice: rent,
-        rentPriceRaw: rent,
-        totalPrice: rent,
-        totalRent: rent,
-        rentPriceTotal: rent,
-        rentPriceSub: "",
-        description: `Comfortable ${shares}-sharing accommodation in ${building.name} with homely meals, attached bathroom, purified drinking water, and high-speed Wi-Fi.`,
-        image: building.heroImages?.main || "/buildings/saiyoojyam-towers/s1.png",
-        includedServices: [
-          "Homely 3 Meals & Tiffin",
-          "Daily Housekeeping",
-          "High Speed Wi-Fi",
-          "24/7 Security & RO Water",
-        ],
-        whatsapp: building.bookingFormWhatsappNumber || "918129339122",
-      };
-    });
-  }, [building, buildingRooms]);
-
-  const effectiveRooms = buildingRooms && buildingRooms.length > 0 ? buildingRooms : fallbackRooms;
+  const availableRooms = buildingRooms || [];
 
   const findMatchingRoom = (param: string | null): RoomItem | undefined => {
     if (!param) return undefined;
     const clean = param.trim().toLowerCase();
     const cleanNum = clean.replace(/^room[-_]/i, "");
-    return effectiveRooms.find(
+    return availableRooms.find(
       (r) =>
         (r.id && r.id.toLowerCase() === clean) ||
         (r.id && r.id.toLowerCase() === `room-${cleanNum}`) ||
@@ -146,7 +51,7 @@ export function BuildingInteractiveSections({
   const findMatchingRoomByType = (typeParam: string | null): RoomItem | undefined => {
     if (!typeParam || typeParam === "all") return undefined;
     const clean = typeParam.trim().toLowerCase();
-    return effectiveRooms.find(
+    return availableRooms.find(
       (r) =>
         (r.id && r.id.toLowerCase() === clean) ||
         String(r.roomType).toLowerCase() === clean ||
@@ -160,7 +65,7 @@ export function BuildingInteractiveSections({
     selectedRoom ||
     findMatchingRoom(roomIdParam) ||
     findMatchingRoomByType(roomTypeParam) ||
-    effectiveRooms[0];
+    availableRooms[0];
 
   // Sync selectedRoom whenever roomIdParam or roomTypeParam changes in the URL
   useEffect(() => {
@@ -171,7 +76,7 @@ export function BuildingInteractiveSections({
       const match = findMatchingRoomByType(roomTypeParam);
       if (match) setSelectedRoom(match);
     }
-  }, [roomIdParam, roomTypeParam, effectiveRooms]);
+  }, [roomIdParam, roomTypeParam, availableRooms]);
 
   // Smooth scroll to #location on mount or URL param change if hash is #location
   useEffect(() => {
@@ -213,7 +118,7 @@ export function BuildingInteractiveSections({
           <BuildingCtaLocation
             building={building}
             selectedRoom={activeRoom}
-            rooms={effectiveRooms}
+            rooms={availableRooms}
           />
         </div>
 
@@ -228,9 +133,9 @@ export function BuildingInteractiveSections({
                 <h2 className="text-lg sm:text-xl font-bold text-gray-950">
                   Available Rooms in {building.name}
                 </h2>
-                {effectiveRooms.length > 0 && (
+                {availableRooms.length > 0 && (
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-[#FF561C]">
-                    {effectiveRooms.length} Room{effectiveRooms.length > 1 ? "s" : ""} Available
+                    {availableRooms.length} Room{availableRooms.length > 1 ? "s" : ""} Available
                   </span>
                 )}
               </div>
@@ -240,11 +145,11 @@ export function BuildingInteractiveSections({
             </div>
           </div>
 
-          {effectiveRooms.length > 0 ? (
+          {availableRooms.length > 0 ? (
             <>
               {/* Mobile & Tablet: 1 column on phones, 2 columns on tablet */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:hidden">
-                {effectiveRooms.map((room) => {
+                {availableRooms.map((room) => {
                   const isSelected = room.id === activeRoom?.id;
                   return (
                     <div
@@ -268,7 +173,7 @@ export function BuildingInteractiveSections({
 
               {/* Desktop: Stacked list with divider lines */}
               <div className="hidden lg:flex flex-col divide-y divide-gray-200 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-xs">
-                {effectiveRooms.map((room) => {
+                {availableRooms.map((room) => {
                   const isSelected = room.id === activeRoom?.id;
                   return (
                     <div
@@ -310,7 +215,7 @@ export function BuildingInteractiveSections({
         <BuildingCtaLocation
           building={building}
           selectedRoom={activeRoom}
-          rooms={effectiveRooms}
+          rooms={availableRooms}
         />
       </div>
 

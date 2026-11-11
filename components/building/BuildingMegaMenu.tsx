@@ -2,14 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { BedDouble, Sparkles, ChevronRight, Check } from "lucide-react";
+import { BedDouble, ChevronRight } from "lucide-react";
 import { RoomItem } from "@/data/roomsData";
-import {
-  PREMIER_FILTERS,
-  ANNEX_FILTERS,
-  TOWERS_FILTERS,
-  TowerRoomFilter,
-} from "@/components/search/TowerFilterSidebar";
+import { TowerRoomFilter } from "@/components/search/TowerFilterSidebar";
 
 interface BuildingMegaMenuProps {
   isOpen: boolean;
@@ -183,41 +178,8 @@ export function BuildingMegaMenu({
   };
 
   // Handle clicking a room category/filter (fallback)
-  const handleCategoryClick = (item: TowerRoomFilter) => {
-    onClose();
-    const filterVal = item.shares ? String(item.shares) : item.id;
-    const targetUrl = `/building/${currentBuildingSlug}?roomType=${encodeURIComponent(
-      filterVal
-    )}#location`;
-
-    router.push(targetUrl);
-
-    if (typeof window !== "undefined") {
-      setTimeout(() => {
-        const targetElement =
-          document.getElementById("location") ||
-          document.getElementById("building-rooms");
-        if (targetElement) {
-          targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }, 100);
-    }
-  };
-
-  // Fallback categories if no rooms are defined
-  let fallbackFilters: TowerRoomFilter[] = [];
-  if (buildingCategories && buildingCategories.length > 0) {
-    fallbackFilters = buildingCategories;
-  } else if (currentBuildingSlug === "premier") {
-    fallbackFilters = PREMIER_FILTERS;
-  } else if (currentBuildingSlug.includes("annex")) {
-    fallbackFilters = ANNEX_FILTERS;
-  } else if (currentBuildingSlug.includes("tower")) {
-    fallbackFilters = TOWERS_FILTERS;
-  }
-
   const hasRooms = displayedRooms.length > 0;
-  const isWide = displayedRooms.length > 4 || fallbackFilters.length > 8;
+  const isWide = displayedRooms.length > 4;
 
   return (
     <div
@@ -241,11 +203,7 @@ export function BuildingMegaMenu({
                 ? `${internalRooms.length} room${
                     internalRooms.length > 1 ? "s" : ""
                   } available`
-                : fallbackFilters.length > 0
-                ? `${fallbackFilters.length} room option${
-                    fallbackFilters.length > 1 ? "s" : ""
-                  } available`
-                : "Explore room options"}
+                : "No rooms available"}
             </p>
           </div>
 
@@ -360,78 +318,6 @@ export function BuildingMegaMenu({
                   <div className="text-right shrink-0 ml-2">
                     <span className="text-xs sm:text-sm font-bold text-[#FF561C]">
                       {displayRent ? `₹${displayRent}` : "—"}
-                    </span>
-                    <span className="text-[10px] text-gray-400 block -mt-0.5">
-                      /month
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        ) : fallbackFilters.length > 0 ? (
-          /* Fallback: Dynamic Room Categories / Types formatted as Rich Cards */
-          <div
-            className={`${
-              isWide
-                ? "grid grid-cols-1 sm:grid-cols-2 gap-2"
-                : "flex flex-col gap-2"
-            } max-h-[360px] overflow-y-auto pr-1 select-none`}
-          >
-            {fallbackFilters.map((item) => {
-              const displayRent =
-                item.price ||
-                (item.shares === 1
-                  ? "8,500"
-                  : item.shares === 2
-                  ? "7,000"
-                  : item.shares === 3
-                  ? "6,500"
-                  : item.shares === 4
-                  ? "6,000"
-                  : "5,500");
-              const sharesText = item.shares
-                ? `${item.shares}-Sharing`
-                : "Shared Room";
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleCategoryClick(item)}
-                  className="w-full text-left p-2.5 rounded-xl border border-gray-150 hover:border-[#FF561C]/50 hover:bg-orange-50/50 transition-all flex items-center justify-between group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-orange-100/80 text-[#FF561C] flex items-center justify-center shrink-0 group-hover:bg-[#FF561C] group-hover:text-white transition-colors">
-                      <BedDouble className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-xs sm:text-[13px] text-gray-900 group-hover:text-[#FF561C] transition-colors truncate">
-                          {item.label}
-                        </span>
-                        {item.isAc ? (
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 bg-blue-50 text-blue-600 rounded">
-                            AC
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-medium px-1.5 py-0.2 bg-gray-100 text-gray-600 rounded">
-                            Non-AC
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-gray-500 truncate mt-0.5">
-                        {sharesText}
-                        <span className="text-emerald-600 font-medium ml-1.5">
-                          • Available
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0 ml-2">
-                    <span className="text-xs sm:text-sm font-bold text-[#FF561C]">
-                      ₹{displayRent}
                     </span>
                     <span className="text-[10px] text-gray-400 block -mt-0.5">
                       /month
