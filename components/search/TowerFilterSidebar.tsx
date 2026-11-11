@@ -12,6 +12,7 @@ export interface TowerRoomFilter {
   isNightAc?: boolean;
   building?: string;
   dbId?: number;
+  price?: string | number;
 }
 
 export interface DynamicBuildingOption {

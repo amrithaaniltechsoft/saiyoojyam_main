@@ -241,6 +241,10 @@ export function BuildingMegaMenu({
                 ? `${internalRooms.length} room${
                     internalRooms.length > 1 ? "s" : ""
                   } available`
+                : fallbackFilters.length > 0
+                ? `${fallbackFilters.length} room option${
+                    fallbackFilters.length > 1 ? "s" : ""
+                  } available`
                 : "Explore room options"}
             </p>
           </div>
@@ -366,32 +370,76 @@ export function BuildingMegaMenu({
             })}
           </div>
         ) : fallbackFilters.length > 0 ? (
-          /* Fallback: Dynamic Room Categories / Types */
+          /* Fallback: Dynamic Room Categories / Types formatted as Rich Cards */
           <div
             className={`${
               isWide
-                ? "grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2"
+                ? "grid grid-cols-1 sm:grid-cols-2 gap-2"
                 : "flex flex-col gap-2"
-            } text-xs sm:text-[13px] text-gray-700 max-h-[360px] overflow-y-auto pr-1`}
+            } max-h-[360px] overflow-y-auto pr-1 select-none`}
           >
-            {fallbackFilters.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleCategoryClick(item)}
-                className="flex items-center justify-between gap-2 hover:text-[#FF561C] hover:bg-orange-50/50 p-1.5 rounded-lg transition-colors text-left cursor-pointer group"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-1.5 h-1.5 rounded-full border border-gray-400 group-hover:border-[#FF561C] group-hover:bg-[#FF561C] shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </div>
-                {item.isAc && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 bg-blue-50 text-blue-600 rounded shrink-0">
-                    AC
-                  </span>
-                )}
-              </button>
-            ))}
+            {fallbackFilters.map((item) => {
+              const displayRent =
+                item.price ||
+                (item.shares === 1
+                  ? "8,500"
+                  : item.shares === 2
+                  ? "7,000"
+                  : item.shares === 3
+                  ? "6,500"
+                  : item.shares === 4
+                  ? "6,000"
+                  : "5,500");
+              const sharesText = item.shares
+                ? `${item.shares}-Sharing`
+                : "Shared Room";
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleCategoryClick(item)}
+                  className="w-full text-left p-2.5 rounded-xl border border-gray-150 hover:border-[#FF561C]/50 hover:bg-orange-50/50 transition-all flex items-center justify-between group cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-orange-100/80 text-[#FF561C] flex items-center justify-center shrink-0 group-hover:bg-[#FF561C] group-hover:text-white transition-colors">
+                      <BedDouble className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-semibold text-xs sm:text-[13px] text-gray-900 group-hover:text-[#FF561C] transition-colors truncate">
+                          {item.label}
+                        </span>
+                        {item.isAc ? (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 bg-blue-50 text-blue-600 rounded">
+                            AC
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-medium px-1.5 py-0.2 bg-gray-100 text-gray-600 rounded">
+                            Non-AC
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                        {sharesText}
+                        <span className="text-emerald-600 font-medium ml-1.5">
+                          • Available
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0 ml-2">
+                    <span className="text-xs sm:text-sm font-bold text-[#FF561C]">
+                      ₹{displayRent}
+                    </span>
+                    <span className="text-[10px] text-gray-400 block -mt-0.5">
+                      /month
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         ) : (
           /* Empty State */

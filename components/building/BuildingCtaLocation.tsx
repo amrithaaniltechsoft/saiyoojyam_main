@@ -58,6 +58,7 @@ export function BuildingCtaLocation({
     const clean = typeParam.trim().toLowerCase();
     return buildingRooms.find(
       (r) =>
+        (r.id && r.id.toLowerCase() === clean) ||
         String(r.roomType).toLowerCase() === clean ||
         String(r.capacity) === clean ||
         (r.roomTypeSlug && r.roomTypeSlug.toLowerCase() === clean) ||
@@ -122,7 +123,9 @@ export function BuildingCtaLocation({
                 {/* Room Number Highlighted Plaque */}
                 <div className="flex items-center gap-2">
                   <div className="px-2.5 py-1 bg-gradient-to-r from-orange-50 to-orange-100/70 border border-orange-200 rounded-lg flex items-center gap-1.5">
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-orange-700">Room</span>
+                    <span className="text-[11px] font-medium uppercase tracking-wider text-orange-700">
+                      {activeRoom.roomNumber?.toLowerCase().includes("share") ? "Option" : "Room"}
+                    </span>
                     <span className="text-xl sm:text-2xl font-semibold text-[#FF561C] leading-none">
                       {activeRoom.roomNumber}
                     </span>
@@ -210,7 +213,9 @@ export function BuildingCtaLocation({
                   className="w-full py-2.5 bg-[#FF561C] hover:bg-[#e0450d] text-white font-semibold rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer"
                 >
                   <BookmarkCheck className="w-4 h-4 text-white" />
-                  <span>Book Now (Room {activeRoom.roomNumber})</span>
+                  <span>
+                    Book Now ({activeRoom.roomNumber?.toLowerCase().includes("room") || activeRoom.roomNumber?.toLowerCase().includes("share") ? activeRoom.roomNumber : `Room ${activeRoom.roomNumber}`})
+                  </span>
                 </button>
               </div>
             </>
