@@ -15,6 +15,7 @@ function WhatsAppIcon({ className = "w-4 h-4 text-[#FF561C]" }: { className?: st
 }
 
 interface CtaData {
+
   title: string;
   description: string;
   image: string;
