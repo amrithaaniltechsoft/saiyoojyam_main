@@ -116,14 +116,13 @@ export function CheckoutPaymentGatewayModal({
               }).catch((e) => console.warn("Easebuzz verify call warning:", e));
             }
 
-            setTimeout(() => {
-              onConfirmPayment({
-                method: response.bank_name || response.mode || "Easebuzz Gateway",
-                transactionId: response.easepayid || response.txnid || `EBZ_${Date.now()}`,
-                provider: "Easebuzz",
-                details: response,
-              });
-            }, 600);
+            // Immediately confirm payment to avoid waiting
+            onConfirmPayment({
+              method: response.bank_name || response.mode || "Easebuzz Gateway",
+              transactionId: response.easepayid || response.txnid || `EBZ_${Date.now()}`,
+              provider: "Easebuzz",
+              details: response,
+            });
           } else {
             // User did not pay, cancelled, or transaction failed! DO NOT SUBMIT BOOKING!
             setStatus("cancelled");

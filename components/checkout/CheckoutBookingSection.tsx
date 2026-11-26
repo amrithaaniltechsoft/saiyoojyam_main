@@ -8,6 +8,7 @@ import { CheckoutGuestForm } from "@/components/checkout/CheckoutGuestForm";
 import { LoginModal } from "@/components/global/LoginModal";
 import { CheckoutAlertModal } from "@/components/checkout/CheckoutAlertModal";
 import { CheckoutPaymentGatewayModal, PaymentDetails } from "@/components/checkout/CheckoutPaymentGatewayModal";
+import { CheckoutSuccessModal } from "@/components/checkout/CheckoutSuccessCard";
 import { ArrowDown } from "lucide-react";
 
 interface CheckoutBookingSectionProps {
@@ -56,6 +57,7 @@ export function CheckoutBookingSection({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isPaymentGatewayOpen, setIsPaymentGatewayOpen] = useState(false);
+  const [successModalData, setSuccessModalData] = useState<any>(null);
   const isSubmittingRef = useRef(false);
 
   // Authentication states
@@ -396,6 +398,10 @@ export function CheckoutBookingSection({
       .then((json) => {
         if (json && json.status) {
           setIsPaymentGatewayOpen(false);
+          isSubmittingRef.current = false;
+          setIsSubmitting(false);
+          setIsRedirecting(false);
+
           const uid = json.data?.inmates_uid || "";
           const inv = json.data?.invoice
             ? {
@@ -424,16 +430,8 @@ export function CheckoutBookingSection({
             console.error("Failed to store payment success in sessionStorage:", e);
           }
 
-          // Keep button disabled and indicate redirect
-          setIsRedirecting(true);
-
-          // Redirect to home page where the success modal is presented
-          router.push("/");
-          setTimeout(() => {
-            if (typeof window !== "undefined" && window.location.pathname !== "/") {
-              window.location.href = "/";
-            }
-          }, 1200);
+          // Immediately display the Booking Request Submitted modal right here!
+          setSuccessModalData(successPayload);
         } else {
           // Re-enable button on error so user can fix and retry
           setIsPaymentGatewayOpen(false);
@@ -684,6 +682,26 @@ export function CheckoutBookingSection({
         onConfirmPayment={handleConfirmPayment}
         isProcessing={isSubmitting || isRedirecting}
       />
+
+      {/* Instant Booking Request Submitted Modal */}
+      {successModalData && (
+        <CheckoutSuccessModal
+          isOpen={true}
+          onClose={() => {
+            setSuccessModalData(null);
+            try {
+              sessionStorage.removeItem("saiyoojyam_payment_success");
+            } catch {}
+            router.push("/");
+          }}
+          name={successModalData.name}
+          building={successModalData.building}
+          room={successModalData.room}
+          checkInDate={successModalData.checkInDate}
+          bookingUid={successModalData.bookingUid}
+          invoiceData={successModalData.invoiceData}
+        />
+      )}
 
       {/* Mobile/Tablet: Center Bottom Floating Redirect Button to "Enter Details" (hidden once user reaches form) */}
       <div
