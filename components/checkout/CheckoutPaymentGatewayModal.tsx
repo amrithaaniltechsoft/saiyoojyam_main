@@ -175,6 +175,7 @@ export function CheckoutPaymentGatewayModal({
     const baseUrl = rawApiUrl.replace(/\/+$/, "");
 
     try {
+      const curOrigin = typeof window !== "undefined" ? window.location.origin : "https://saiyoojyam-main-yyd7.vercel.app";
       const res = await fetch(`${baseUrl}/api/easebuzz/initiate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -184,6 +185,8 @@ export function CheckoutPaymentGatewayModal({
           email: guestEmail || "guest@example.com",
           phone: guestPhone || "9999999999",
           productinfo: `Hostel Room Reservation ${roomNumber ? `Room ${roomNumber}` : ""}`,
+          surl: `${curOrigin}/checkout?payment_status=success`,
+          furl: `${curOrigin}/checkout?payment_status=failed`,
           udf1: String(invoiceId || ""),
           udf2: String(inmatesId || ""),
           udf3: String(bookingUid || ""),
