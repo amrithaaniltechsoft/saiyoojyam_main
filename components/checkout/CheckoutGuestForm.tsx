@@ -27,6 +27,59 @@ interface DocumentDropzoneProps {
   onClear: () => void;
 }
 
+function compressImageFile(file: File, maxDim = 1600, quality = 0.82): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/svg+xml") {
+    return Promise.resolve(file);
+  }
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob || blob.size >= file.size) {
+              resolve(file);
+            } else {
+              const compressed = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressed);
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 function DocumentDropzone({
   id,
   label,
@@ -53,7 +106,16 @@ function DocumentDropzone({
     }
   }, [file]);
 
-  const handleSelectedFile = (f: File) => {
+  const handleSelectedFile = async (f: File) => {
+    if (f.type.startsWith("image/") && f.size > 700 * 1024) {
+      try {
+        const compressed = await compressImageFile(f);
+        onFileChange(compressed);
+        return;
+      } catch {
+        // Fall back to original file
+      }
+    }
     onFileChange(f);
   };
 
@@ -233,6 +295,7 @@ interface CheckoutGuestFormProps {
   agreed: boolean;
   setAgreed: (v: boolean) => void;
   isSubmitting: boolean;
+  isSavingReservation?: boolean;
   isRedirecting?: boolean;
   totalPrice: number;
   monthlyRent?: number;
@@ -278,6 +341,7 @@ export function CheckoutGuestForm({
   agreed,
   setAgreed,
   isSubmitting,
+  isSavingReservation = false,
   isRedirecting = false,
   totalPrice,
   monthlyRent,
@@ -609,9 +673,9 @@ export function CheckoutGuestForm({
             ) : (
               <button
                 type="submit"
-                disabled={isSubmitting || isRedirecting || isCheckingAvailability}
+                disabled={isSubmitting || isSavingReservation || isRedirecting || isCheckingAvailability}
                 className={`w-full sm:w-auto min-w-[200px] px-8 py-3 font-semibold rounded-md text-sm sm:text-base shadow-md transition-all flex items-center justify-center gap-2 shrink-0 select-none ${
-                  isSubmitting || isRedirecting || isCheckingAvailability
+                  isSubmitting || isSavingReservation || isRedirecting || isCheckingAvailability
                     ? "bg-gray-400 text-white cursor-not-allowed pointer-events-none opacity-70 shadow-none"
                     : "bg-[#FF561C] hover:bg-[#e0450d] text-white shadow-orange-500/20 active:scale-95 cursor-pointer"
                 }`}
@@ -623,6 +687,14 @@ export function CheckoutGuestForm({
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     <span>Booking Confirmed! Redirecting...</span>
+                  </>
+                ) : isSavingReservation ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Opening Gateway...</span>
                   </>
                 ) : isSubmitting ? (
                   <>

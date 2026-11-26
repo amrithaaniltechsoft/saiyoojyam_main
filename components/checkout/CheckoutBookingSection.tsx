@@ -538,10 +538,42 @@ export function CheckoutBookingSection({
 
   // Payment succeeded on gateway
   const handleConfirmPayment = (paymentDetails: PaymentDetails) => {
-    if (isSubmittingRef.current || isSubmitting) return;
-    isSubmittingRef.current = true;
-    setIsSubmitting(true);
+    // 1. Immediately close gateway modal and show Success modal with zero delay!
+    setIsPaymentGatewayOpen(false);
+    isSubmittingRef.current = false;
+    setIsSubmitting(false);
 
+    const uid = savedBooking?.bookingUid || "";
+    const inv = savedBooking?.invoiceData
+      ? {
+          ...savedBooking.invoiceData,
+          inmates_id: savedBooking?.inmatesId,
+          transaction_id: paymentDetails.transactionId,
+          payment_method: paymentDetails.method,
+          invoice_status: "Fully Paid",
+        }
+      : null;
+
+    const successPayload = {
+      name,
+      building,
+      room,
+      checkInDate: checkInParam,
+      bookingUid: uid,
+      invoiceData: inv,
+    };
+
+    try {
+      sessionStorage.setItem("saiyoojyam_payment_success", JSON.stringify(successPayload));
+      window.dispatchEvent(new Event("booking-success"));
+    } catch (e) {
+      console.error("Failed to store payment success in sessionStorage:", e);
+    }
+
+    // Instantly show the Booking Request Submitted receipt modal!
+    setSuccessModalData(successPayload);
+
+    // 2. Perform backend payment update in background
     const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost/saiyoojyam";
     const baseUrl = rawApiUrl.replace(/\/+$/, "");
 
@@ -556,58 +588,9 @@ export function CheckoutBookingSection({
         payment_method: paymentDetails.method,
         payment_gateway: paymentDetails.provider,
       }),
-    })
-      .then((res) => res.json())
-      .then((json) => {
-        setIsPaymentGatewayOpen(false);
-        isSubmittingRef.current = false;
-        setIsSubmitting(false);
-
-        const uid = savedBooking?.bookingUid || "";
-        const inv = savedBooking?.invoiceData
-          ? {
-              ...savedBooking.invoiceData,
-              inmates_id: savedBooking.inmatesId,
-              transaction_id: paymentDetails.transactionId,
-              payment_method: paymentDetails.method,
-              invoice_status: "Fully Paid",
-            }
-          : null;
-
-        const successPayload = {
-          name,
-          building,
-          room,
-          checkInDate: checkInParam,
-          bookingUid: uid,
-          invoiceData: inv,
-        };
-
-        try {
-          sessionStorage.setItem("saiyoojyam_payment_success", JSON.stringify(successPayload));
-          window.dispatchEvent(new Event("booking-success"));
-        } catch (e) {
-          console.error("Failed to store payment success in sessionStorage:", e);
-        }
-
-        // Show the Booking Request Submitted modal immediately!
-        setSuccessModalData(successPayload);
-      })
-      .catch((err) => {
-        setIsPaymentGatewayOpen(false);
-        isSubmittingRef.current = false;
-        setIsSubmitting(false);
-
-        const successPayload = {
-          name,
-          building,
-          room,
-          checkInDate: checkInParam,
-          bookingUid: savedBooking?.bookingUid || "",
-          invoiceData: savedBooking?.invoiceData,
-        };
-        setSuccessModalData(successPayload);
-      });
+    }).catch((err) => {
+      console.warn("Background update-payment notice:", err);
+    });
   };
 
   // Track whether the form has reached the viewport
@@ -681,7 +664,8 @@ export function CheckoutBookingSection({
         setPhotoFile={setPhotoFile}
         agreed={agreed}
         setAgreed={setAgreed}
-        isSubmitting={isSubmitting || isSavingReservation}
+        isSubmitting={isSubmitting}
+        isSavingReservation={isSavingReservation}
         isRedirecting={isRedirecting}
         totalPrice={totalPrice}
         monthlyRent={monthlyRent}

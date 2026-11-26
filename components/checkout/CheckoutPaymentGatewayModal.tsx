@@ -218,6 +218,11 @@ export function CheckoutPaymentGatewayModal({
   };
 
   useEffect(() => {
+    // Preload Easebuzz checkout SDK in the background on page load
+    loadEasebuzzSdk();
+  }, []);
+
+  useEffect(() => {
     if (isOpen) {
       if (!hasInitiatedRef.current) {
         hasInitiatedRef.current = true;
