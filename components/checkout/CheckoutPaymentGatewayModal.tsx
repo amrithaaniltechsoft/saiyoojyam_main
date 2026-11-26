@@ -106,7 +106,6 @@ export function CheckoutPaymentGatewayModal({
       const options = {
         access_key: accKey,
         onResponse: (response: any) => {
-          console.log("Easebuzz onResponse:", response);
 
           // ONLY proceed if Easebuzz confirms SUCCESS
           if (
