@@ -58,6 +58,13 @@ export function CheckoutBookingSection({
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isPaymentGatewayOpen, setIsPaymentGatewayOpen] = useState(false);
   const [successModalData, setSuccessModalData] = useState<any>(null);
+  const [savedBooking, setSavedBooking] = useState<{
+    inmatesId: number | string;
+    invoiceId: number | string;
+    bookingUid: string;
+    invoiceData?: any;
+  } | null>(null);
+  const [isSavingReservation, setIsSavingReservation] = useState(false);
   const isSubmittingRef = useRef(false);
 
   // Authentication states
@@ -70,7 +77,7 @@ export function CheckoutBookingSection({
     isOpen: boolean;
     title?: string;
     message: string;
-    type?: "email_conflict" | "warning" | "error" | "info" | "id_proof" | "photo";
+    type?: "email_conflict" | "warning" | "error" | "info" | "id_proof" | "photo" | "payment_pending" | "payment_failed";
     primaryButtonText?: string;
     onPrimaryClick?: () => void;
     secondaryButtonText?: string;
@@ -340,18 +347,14 @@ export function CheckoutBookingSection({
       return;
     }
 
-    // All form validations passed! Open Payment Gateway Option Modal
-    setIsPaymentGatewayOpen(true);
-  };
-
-  const handleConfirmPayment = (paymentDetails: PaymentDetails) => {
-    // Guard against duplicate execution
-    if (isSubmittingRef.current || isSubmitting || isRedirecting) {
+    // If reservation is ALREADY saved in database, re-open the gateway directly!
+    if (savedBooking) {
+      setIsPaymentGatewayOpen(true);
       return;
     }
 
-    isSubmittingRef.current = true;
-    setIsSubmitting(true);
+    // Save reservation in database with status PENDING while opening payment gateway
+    setIsSavingReservation(true);
 
     const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost/saiyoojyam";
     const baseUrl = rawApiUrl.replace(/\/+$/, "");
@@ -386,10 +389,10 @@ export function CheckoutBookingSection({
     formData.append("baseMonthlyRent", String(effectiveBaseRent || 0));
     formData.append("calculatedRent", String(monthlyRent || 0));
 
-    // Gateway Payment Details
-    formData.append("payment_method", paymentDetails.method);
-    formData.append("payment_gateway", paymentDetails.provider);
-    formData.append("transaction_id", paymentDetails.transactionId);
+    // Save as PENDING payment
+    formData.append("payment_status", "pending");
+    formData.append("payment_method", "Easebuzz Gateway");
+    formData.append("payment_gateway", "Easebuzz");
 
     if (idProofFile) {
       formData.append("inmates_id_proof", idProofFile);
@@ -409,64 +412,28 @@ export function CheckoutBookingSection({
     })
       .then((res) => res.json())
       .then((json) => {
+        setIsSavingReservation(false);
         if (json && json.status) {
-          setIsPaymentGatewayOpen(false);
-          isSubmittingRef.current = false;
-          setIsSubmitting(false);
-          setIsRedirecting(false);
-
           const uid = json.data?.inmates_uid || "";
-          const inv = json.data?.invoice
-            ? {
-                ...json.data.invoice,
-                inmates_id: json.data.inmates_id,
-                print_url: json.data.api_print_url || json.data.print_url,
-                receipt_url: json.data.receipt_url,
-                transaction_id: paymentDetails.transactionId,
-                payment_method: paymentDetails.method,
-              }
-            : null;
-
-          const successPayload = {
-            name,
-            building,
-            room,
-            checkInDate: checkInParam,
+          const inmatesId = json.data?.inmates_id || "";
+          const invId = json.data?.invoice?.invoice_id || "";
+          const bookingData = {
+            inmatesId,
+            invoiceId: invId,
             bookingUid: uid,
-            invoiceData: inv,
+            invoiceData: json.data?.invoice,
           };
-
-          try {
-            sessionStorage.setItem("saiyoojyam_payment_success", JSON.stringify(successPayload));
-            window.dispatchEvent(new Event("booking-success"));
-          } catch (e) {
-            console.error("Failed to store payment success in sessionStorage:", e);
-          }
-
-          // Immediately display the Booking Request Submitted modal right here!
-          setSuccessModalData(successPayload);
+          setSavedBooking(bookingData);
+          // Data is saved in table! Now open the gateway!
+          setIsPaymentGatewayOpen(true);
         } else {
-          // Re-enable button on error so user can fix and retry
-          setIsPaymentGatewayOpen(false);
-          isSubmittingRef.current = false;
-          setIsSubmitting(false);
-          setIsRedirecting(false);
-
-          const errorMsg = json?.message || "Failed to submit booking. Please try again.";
+          const errorMsg = json?.message || "Failed to save reservation. Please try again.";
           const isEmailConflict =
             typeof errorMsg === "string" &&
             errorMsg.toLowerCase().includes("email") &&
             (errorMsg.toLowerCase().includes("already registered") ||
               errorMsg.toLowerCase().includes("active resident") ||
               errorMsg.toLowerCase().includes("unique email"));
-
-          const isIdProofMissing =
-            typeof errorMsg === "string" &&
-            errorMsg.toLowerCase().includes("id proof");
-
-          const isPhotoMissing =
-            typeof errorMsg === "string" &&
-            (errorMsg.toLowerCase().includes("profile photo") || errorMsg.toLowerCase().includes("photo is mandatory"));
 
           if (isEmailConflict) {
             setAlertModal({
@@ -492,44 +459,6 @@ export function CheckoutBookingSection({
                 setIsLoginModalOpen(true);
               },
             });
-          } else if (isIdProofMissing) {
-            setAlertModal({
-              isOpen: true,
-              title: "ID Proof Required",
-              message: errorMsg,
-              type: "id_proof",
-              primaryButtonText: "Upload ID Proof",
-              onPrimaryClick: () => {
-                setAlertModal(null);
-                setTimeout(() => {
-                  const container = document.getElementById("inmates-id-proof-zone");
-                  if (container) {
-                    container.scrollIntoView({ behavior: "smooth", block: "center" });
-                    const input = container.querySelector("input[type='file']") as HTMLInputElement | null;
-                    input?.click();
-                  }
-                }, 150);
-              },
-            });
-          } else if (isPhotoMissing) {
-            setAlertModal({
-              isOpen: true,
-              title: "Profile Photo Required",
-              message: errorMsg,
-              type: "photo",
-              primaryButtonText: "Upload Profile Photo",
-              onPrimaryClick: () => {
-                setAlertModal(null);
-                setTimeout(() => {
-                  const container = document.getElementById("inmates-photo-zone");
-                  if (container) {
-                    container.scrollIntoView({ behavior: "smooth", block: "center" });
-                    const input = container.querySelector("input[type='file']") as HTMLInputElement | null;
-                    input?.click();
-                  }
-                }, 150);
-              },
-            });
           } else {
             setAlertModal({
               isOpen: true,
@@ -543,20 +472,141 @@ export function CheckoutBookingSection({
         }
       })
       .catch((err) => {
-        console.error("Booking submission error:", err);
-        // Re-enable button on error so user can retry
-        setIsPaymentGatewayOpen(false);
-        isSubmittingRef.current = false;
-        setIsSubmitting(false);
-        setIsRedirecting(false);
+        setIsSavingReservation(false);
+        console.error("Booking save error:", err);
         setAlertModal({
           isOpen: true,
           title: "Connection Error",
-          message: "Unable to complete booking request. Please check your internet connection and try again.",
+          message: "Network error while saving booking request. Please check your internet connection.",
           type: "error",
           primaryButtonText: "Close",
           onPrimaryClick: () => setAlertModal(null),
         });
+      });
+  };
+
+  // User closed payment gateway without completing payment
+  const handlePaymentClosed = () => {
+    setIsPaymentGatewayOpen(false);
+    setAlertModal({
+      isOpen: true,
+      title: "Booking Saved · Payment Pending",
+      message: `Your booking request (${savedBooking?.bookingUid || "Reservation"}) has been safely recorded in our system with Payment Status: PENDING. You can retry payment anytime to confirm your room immediately.`,
+      type: "payment_pending",
+      primaryButtonText: "Retry Payment Now",
+      onPrimaryClick: () => {
+        setAlertModal(null);
+        setIsPaymentGatewayOpen(true);
+      },
+      secondaryButtonText: "Close",
+      onSecondaryClick: () => setAlertModal(null),
+    });
+  };
+
+  // Payment failed on gateway
+  const handlePaymentFailed = (errorMsg: string) => {
+    setIsPaymentGatewayOpen(false);
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost/saiyoojyam";
+    const baseUrl = rawApiUrl.replace(/\/+$/, "");
+
+    if (savedBooking?.inmatesId) {
+      fetch(`${baseUrl}/api/checkout/update-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inmates_id: savedBooking.inmatesId,
+          invoice_id: savedBooking.invoiceId,
+          status: "failed",
+        }),
+      }).catch((e) => console.warn("Failed to record payment failure:", e));
+    }
+
+    setAlertModal({
+      isOpen: true,
+      title: "Payment Failed",
+      message: `Payment transaction could not be completed (${errorMsg}). Your room booking (${savedBooking?.bookingUid || ""}) has been recorded with Payment Status: FAILED.`,
+      type: "payment_failed",
+      primaryButtonText: "Try Payment Again",
+      onPrimaryClick: () => {
+        setAlertModal(null);
+        setIsPaymentGatewayOpen(true);
+      },
+      secondaryButtonText: "Close",
+      onSecondaryClick: () => setAlertModal(null),
+    });
+  };
+
+  // Payment succeeded on gateway
+  const handleConfirmPayment = (paymentDetails: PaymentDetails) => {
+    if (isSubmittingRef.current || isSubmitting) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost/saiyoojyam";
+    const baseUrl = rawApiUrl.replace(/\/+$/, "");
+
+    fetch(`${baseUrl}/api/checkout/update-payment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        inmates_id: savedBooking?.inmatesId,
+        invoice_id: savedBooking?.invoiceId,
+        status: "paid",
+        transaction_id: paymentDetails.transactionId,
+        payment_method: paymentDetails.method,
+        payment_gateway: paymentDetails.provider,
+      }),
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        setIsPaymentGatewayOpen(false);
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
+
+        const uid = savedBooking?.bookingUid || "";
+        const inv = savedBooking?.invoiceData
+          ? {
+              ...savedBooking.invoiceData,
+              inmates_id: savedBooking.inmatesId,
+              transaction_id: paymentDetails.transactionId,
+              payment_method: paymentDetails.method,
+              invoice_status: "Fully Paid",
+            }
+          : null;
+
+        const successPayload = {
+          name,
+          building,
+          room,
+          checkInDate: checkInParam,
+          bookingUid: uid,
+          invoiceData: inv,
+        };
+
+        try {
+          sessionStorage.setItem("saiyoojyam_payment_success", JSON.stringify(successPayload));
+          window.dispatchEvent(new Event("booking-success"));
+        } catch (e) {
+          console.error("Failed to store payment success in sessionStorage:", e);
+        }
+
+        // Show the Booking Request Submitted modal immediately!
+        setSuccessModalData(successPayload);
+      })
+      .catch((err) => {
+        setIsPaymentGatewayOpen(false);
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
+
+        const successPayload = {
+          name,
+          building,
+          room,
+          checkInDate: checkInParam,
+          bookingUid: savedBooking?.bookingUid || "",
+          invoiceData: savedBooking?.invoiceData,
+        };
+        setSuccessModalData(successPayload);
       });
   };
 
@@ -631,7 +681,7 @@ export function CheckoutBookingSection({
         setPhotoFile={setPhotoFile}
         agreed={agreed}
         setAgreed={setAgreed}
-        isSubmitting={isSubmitting}
+        isSubmitting={isSubmitting || isSavingReservation}
         isRedirecting={isRedirecting}
         totalPrice={totalPrice}
         monthlyRent={monthlyRent}
@@ -682,7 +732,10 @@ export function CheckoutBookingSection({
       {/* Secure Payment Gateway Checkout Modal */}
       <CheckoutPaymentGatewayModal
         isOpen={isPaymentGatewayOpen}
-        onClose={() => setIsPaymentGatewayOpen(false)}
+        onClose={() => {
+          setIsPaymentGatewayOpen(false);
+          handlePaymentClosed();
+        }}
         totalPrice={totalPrice}
         monthlyRent={monthlyRent}
         admissionFees={admissionFees}
@@ -692,7 +745,12 @@ export function CheckoutBookingSection({
         guestName={name}
         guestEmail={email}
         guestPhone={phone}
+        inmatesId={savedBooking?.inmatesId}
+        invoiceId={savedBooking?.invoiceId}
+        bookingUid={savedBooking?.bookingUid}
         onConfirmPayment={handleConfirmPayment}
+        onPaymentClosed={handlePaymentClosed}
+        onPaymentFailed={handlePaymentFailed}
         isProcessing={isSubmitting || isRedirecting}
       />
 

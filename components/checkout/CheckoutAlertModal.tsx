@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, MailWarning, AlertCircle, AlertTriangle, ArrowRight, LogIn, FileText, Camera } from "lucide-react";
+import { X, MailWarning, AlertCircle, AlertTriangle, ArrowRight, LogIn, FileText, Camera, Clock, XCircle, RotateCcw } from "lucide-react";
 
 export interface CheckoutAlertModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   message: string;
-  type?: "email_conflict" | "warning" | "error" | "info" | "id_proof" | "photo";
+  type?: "email_conflict" | "warning" | "error" | "info" | "id_proof" | "photo" | "payment_pending" | "payment_failed";
   primaryButtonText?: string;
   onPrimaryClick?: () => void;
   secondaryButtonText?: string;
@@ -49,12 +49,18 @@ export function CheckoutAlertModal({
 
   // Determine modal header icon and styles based on type
   const isEmailConflict = type === "email_conflict";
-  const isError = type === "error";
+  const isPaymentPending = type === "payment_pending";
+  const isPaymentFailed = type === "payment_failed";
+  const isError = type === "error" || isPaymentFailed;
 
   const resolvedTitle =
     title ||
     (isEmailConflict
       ? "Email Already Registered"
+      : isPaymentPending
+      ? "Booking Saved · Payment Pending"
+      : isPaymentFailed
+      ? "Payment Failed"
       : isError
       ? "Unable to Process Booking"
       : "Booking Notice");
@@ -63,6 +69,10 @@ export function CheckoutAlertModal({
     primaryButtonText ||
     (isEmailConflict
       ? "Update Email Address"
+      : isPaymentPending
+      ? "Retry Payment Now"
+      : isPaymentFailed
+      ? "Try Payment Again"
       : isError
       ? "Close"
       : "Understood");
@@ -107,6 +117,18 @@ export function CheckoutAlertModal({
             <div className="relative inline-flex items-center justify-center">
               <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shadow-xs">
                 <MailWarning className="w-7 h-7 stroke-[2.2]" />
+              </div>
+            </div>
+          ) : isPaymentPending ? (
+            <div className="relative inline-flex items-center justify-center">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shadow-xs">
+                <Clock className="w-7 h-7 stroke-[2.2] animate-pulse" />
+              </div>
+            </div>
+          ) : isPaymentFailed ? (
+            <div className="relative inline-flex items-center justify-center">
+              <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center shadow-xs">
+                <XCircle className="w-7 h-7 stroke-[2.2]" />
               </div>
             </div>
           ) : type === "id_proof" ? (

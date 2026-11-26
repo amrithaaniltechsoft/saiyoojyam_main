@@ -30,7 +30,12 @@ interface CheckoutPaymentGatewayModalProps {
   guestName?: string;
   guestEmail?: string;
   guestPhone?: string;
+  inmatesId?: number | string;
+  invoiceId?: number | string;
+  bookingUid?: string;
   onConfirmPayment: (payment: PaymentDetails) => void;
+  onPaymentFailed?: (errorMsg: string) => void;
+  onPaymentClosed?: () => void;
   isProcessing?: boolean;
 }
 
@@ -43,7 +48,12 @@ export function CheckoutPaymentGatewayModal({
   guestName = "",
   guestEmail = "",
   guestPhone = "",
+  inmatesId,
+  invoiceId,
+  bookingUid,
   onConfirmPayment,
+  onPaymentFailed,
+  onPaymentClosed,
   isProcessing = false,
 }: CheckoutPaymentGatewayModalProps) {
   const [status, setStatus] = useState<"loading" | "ready" | "failed" | "cancelled" | "success">("loading");
@@ -124,13 +134,26 @@ export function CheckoutPaymentGatewayModal({
               details: response,
             });
           } else {
-            // User did not pay, cancelled, or transaction failed! DO NOT SUBMIT BOOKING!
-            setStatus("cancelled");
-            setErrorMessage(
+            // Payment cancelled or failed
+            const isUserCancel =
+              response?.status === "userCancelled" ||
+              response?.status === "cancelled" ||
+              !response?.status;
+            const errDetail =
               response?.error_Message ||
               response?.message ||
-              "Payment was cancelled or not completed on Easebuzz. Your booking has NOT been placed."
-            );
+              (isUserCancel
+                ? "Payment window was closed. Your room reservation is saved with status Pending."
+                : "Payment transaction failed.");
+
+            setStatus("cancelled");
+            setErrorMessage(errDetail);
+
+            if (isUserCancel && onPaymentClosed) {
+              onPaymentClosed();
+            } else if (onPaymentFailed) {
+              onPaymentFailed(errDetail);
+            }
           }
         },
         theme: "#FF561C",
@@ -162,6 +185,9 @@ export function CheckoutPaymentGatewayModal({
           email: guestEmail || "guest@example.com",
           phone: guestPhone || "9999999999",
           productinfo: `Hostel Room Reservation ${roomNumber ? `Room ${roomNumber}` : ""}`,
+          udf1: String(invoiceId || ""),
+          udf2: String(inmatesId || ""),
+          udf3: String(bookingUid || ""),
         }),
       });
 
@@ -250,7 +276,12 @@ export function CheckoutPaymentGatewayModal({
           <button
             type="button"
             disabled={isProcessing}
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              if (onPaymentClosed) {
+                onPaymentClosed();
+              }
+            }}
             className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
             aria-label="Close"
           >
