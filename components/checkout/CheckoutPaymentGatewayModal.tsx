@@ -400,7 +400,7 @@ export function CheckoutPaymentGatewayModal({
 
           {status === "success" && (
             <div className="py-6 text-center space-y-3">
-              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-200">
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-200 animate-pulse">
                 <CheckCircle2 className="w-7 h-7 text-emerald-600" />
               </div>
               <div className="space-y-1">
@@ -408,8 +408,11 @@ export function CheckoutPaymentGatewayModal({
                   Payment Verified by Easebuzz!
                 </p>
                 <p className="text-xs text-gray-600">
-                  Confirming your room booking and generating your receipt...
+                  Finalizing your room booking and generating your receipt...
                 </p>
+              </div>
+              <div className="mx-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 text-xs font-semibold flex items-center justify-center gap-1.5">
+                <span>⚠️ Please do NOT refresh or close this page. Processing takes just a moment...</span>
               </div>
             </div>
           )}

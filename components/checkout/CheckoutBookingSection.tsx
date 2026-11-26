@@ -134,6 +134,19 @@ export function CheckoutBookingSection({
     };
   }, [checkInParam, checkOutParam, durationParam, building?.slug, cleanRoomId]);
 
+  // Prevent accidental page refresh / navigation while booking is submitting
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isSubmittingRef.current) {
+        e.preventDefault();
+        e.returnValue = "Your booking is currently being processed. Please do not refresh or leave this page.";
+        return e.returnValue;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
   // Sync login status from localStorage and listen to events
   useEffect(() => {
     const syncUser = () => {
