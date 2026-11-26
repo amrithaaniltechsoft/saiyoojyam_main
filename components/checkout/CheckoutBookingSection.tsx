@@ -7,6 +7,7 @@ import { RoomItem } from "@/data/roomsData";
 import { CheckoutGuestForm } from "@/components/checkout/CheckoutGuestForm";
 import { LoginModal } from "@/components/global/LoginModal";
 import { CheckoutAlertModal } from "@/components/checkout/CheckoutAlertModal";
+import { CheckoutPaymentGatewayModal, PaymentDetails } from "@/components/checkout/CheckoutPaymentGatewayModal";
 import { ArrowDown } from "lucide-react";
 
 interface CheckoutBookingSectionProps {
@@ -54,6 +55,7 @@ export function CheckoutBookingSection({
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isPaymentGatewayOpen, setIsPaymentGatewayOpen] = useState(false);
   const isSubmittingRef = useRef(false);
 
   // Authentication states
@@ -175,7 +177,71 @@ export function CheckoutBookingSection({
       return;
     }
 
-    // 2. Check verification agreement
+    // 2. Validate mandatory personal info
+    if (!name.trim()) {
+      setAlertModal({
+        isOpen: true,
+        title: "Full Name Required",
+        message: "Please enter your full name to proceed with the booking.",
+        type: "warning",
+        primaryButtonText: "Enter Name",
+        onPrimaryClick: () => {
+          setAlertModal(null);
+          setTimeout(() => {
+            const input = document.getElementById("guest-name-input") as HTMLInputElement | null;
+            if (input) {
+              input.scrollIntoView({ behavior: "smooth", block: "center" });
+              input.focus();
+            }
+          }, 150);
+        },
+      });
+      return;
+    }
+
+    if (!email.trim() || !email.includes("@")) {
+      setAlertModal({
+        isOpen: true,
+        title: "Valid Email Required",
+        message: "Please enter a valid email address so we can send your booking confirmation & receipt.",
+        type: "warning",
+        primaryButtonText: "Enter Email",
+        onPrimaryClick: () => {
+          setAlertModal(null);
+          setTimeout(() => {
+            const input = document.getElementById("guest-email-input") as HTMLInputElement | null;
+            if (input) {
+              input.scrollIntoView({ behavior: "smooth", block: "center" });
+              input.focus();
+            }
+          }, 150);
+        },
+      });
+      return;
+    }
+
+    if (!phone.trim()) {
+      setAlertModal({
+        isOpen: true,
+        title: "Phone Number Required",
+        message: "Please enter your mobile phone number for verification.",
+        type: "warning",
+        primaryButtonText: "Enter Phone",
+        onPrimaryClick: () => {
+          setAlertModal(null);
+          setTimeout(() => {
+            const input = document.getElementById("guest-phone-input") as HTMLInputElement | null;
+            if (input) {
+              input.scrollIntoView({ behavior: "smooth", block: "center" });
+              input.focus();
+            }
+          }, 150);
+        },
+      });
+      return;
+    }
+
+    // 3. Check verification agreement
     if (!agreed) {
       setAlertModal({
         isOpen: true,
@@ -197,7 +263,7 @@ export function CheckoutBookingSection({
       return;
     }
 
-    // 3. Check room availability
+    // 4. Check room availability
     if (availabilityResult && !availabilityResult.isAvailable) {
       setAlertModal({
         isOpen: true,
@@ -212,7 +278,7 @@ export function CheckoutBookingSection({
       return;
     }
 
-    // 4. Check mandatory ID proof
+    // 5. Check mandatory ID proof
     if (!idProofFile && !idProofFileName) {
       setAlertModal({
         isOpen: true,
@@ -236,7 +302,7 @@ export function CheckoutBookingSection({
       return;
     }
 
-    // 5. Check mandatory Profile photo
+    // 6. Check mandatory Profile photo
     if (!photoFile && !photoFileName) {
       setAlertModal({
         isOpen: true,
@@ -259,7 +325,16 @@ export function CheckoutBookingSection({
       return;
     }
 
-    // Immediately disable the button and set ref
+    // All form validations passed! Open Payment Gateway Option Modal
+    setIsPaymentGatewayOpen(true);
+  };
+
+  const handleConfirmPayment = (paymentDetails: PaymentDetails) => {
+    // Guard against duplicate execution
+    if (isSubmittingRef.current || isSubmitting || isRedirecting) {
+      return;
+    }
+
     isSubmittingRef.current = true;
     setIsSubmitting(true);
 
@@ -296,6 +371,11 @@ export function CheckoutBookingSection({
     formData.append("baseMonthlyRent", String(effectiveBaseRent || 0));
     formData.append("calculatedRent", String(monthlyRent || 0));
 
+    // Gateway Payment Details
+    formData.append("payment_method", paymentDetails.method);
+    formData.append("payment_gateway", paymentDetails.provider);
+    formData.append("transaction_id", paymentDetails.transactionId);
+
     if (idProofFile) {
       formData.append("inmates_id_proof", idProofFile);
     } else if (idProofFileName) {
@@ -315,6 +395,7 @@ export function CheckoutBookingSection({
       .then((res) => res.json())
       .then((json) => {
         if (json && json.status) {
+          setIsPaymentGatewayOpen(false);
           const uid = json.data?.inmates_uid || "";
           const inv = json.data?.invoice
             ? {
@@ -322,6 +403,8 @@ export function CheckoutBookingSection({
                 inmates_id: json.data.inmates_id,
                 print_url: json.data.api_print_url || json.data.print_url,
                 receipt_url: json.data.receipt_url,
+                transaction_id: paymentDetails.transactionId,
+                payment_method: paymentDetails.method,
               }
             : null;
 
@@ -353,6 +436,7 @@ export function CheckoutBookingSection({
           }, 1200);
         } else {
           // Re-enable button on error so user can fix and retry
+          setIsPaymentGatewayOpen(false);
           isSubmittingRef.current = false;
           setIsSubmitting(false);
           setIsRedirecting(false);
@@ -450,6 +534,7 @@ export function CheckoutBookingSection({
       .catch((err) => {
         console.error("Booking submission error:", err);
         // Re-enable button on error so user can retry
+        setIsPaymentGatewayOpen(false);
         isSubmittingRef.current = false;
         setIsSubmitting(false);
         setIsRedirecting(false);
@@ -582,6 +667,23 @@ export function CheckoutBookingSection({
           onClose={() => setAlertModal(null)}
         />
       )}
+
+      {/* Secure Payment Gateway Checkout Modal */}
+      <CheckoutPaymentGatewayModal
+        isOpen={isPaymentGatewayOpen}
+        onClose={() => setIsPaymentGatewayOpen(false)}
+        totalPrice={totalPrice}
+        monthlyRent={monthlyRent}
+        admissionFees={admissionFees}
+        cautionDeposit={cautionDeposit}
+        buildingName={building?.name}
+        roomNumber={room?.roomNumber}
+        guestName={name}
+        guestEmail={email}
+        guestPhone={phone}
+        onConfirmPayment={handleConfirmPayment}
+        isProcessing={isSubmitting || isRedirecting}
+      />
 
       {/* Mobile/Tablet: Center Bottom Floating Redirect Button to "Enter Details" (hidden once user reaches form) */}
       <div

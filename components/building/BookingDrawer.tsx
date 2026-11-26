@@ -40,9 +40,8 @@ export function BookingDrawer({
     (building.slug || "premier").toLowerCase().trim()
   );
   const numPersons = "1";
-  const [duration, setDuration] = useState<"Long Term" | "Short Term" | "">("");
+  const [duration, setDuration] = useState<"Long Term">("Long Term");
   const [checkInDate, setCheckInDate] = useState<string>("");
-  const [checkOutDate, setCheckOutDate] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
   const [fetchedBuildings, setFetchedBuildings] = useState<any[]>([]);
 
@@ -65,31 +64,9 @@ export function BookingDrawer({
     return String(raw).replace(/^room-/, "").trim();
   }, [room]);
 
-  // Minimum check-out date is the day after check-in date
-  const minCheckOutDate = useMemo(() => {
-    if (!checkInDate) return new Date().toISOString().split("T")[0];
-    const parts = checkInDate.split("-").map(Number);
-    if (parts.length === 3) {
-      const d = new Date(parts[0], parts[1] - 1, parts[2] + 1);
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    }
-    return checkInDate;
-  }, [checkInDate]);
-
-  // Check real-time room availability ONLY after BOTH date AND duration of stay are selected
+  // Check real-time room availability ONLY after check-in date is selected
   useEffect(() => {
-    // If either check-in date or duration is not selected, do not perform availability check
-    if (!checkInDate || !duration) {
-      setAvailabilityResult(null);
-      setIsCheckingAvailability(false);
-      return;
-    }
-
-    // For Short Term stays, check-out date is also required
-    if (duration === "Short Term" && !checkOutDate) {
+    if (!checkInDate) {
       setAvailabilityResult(null);
       setIsCheckingAvailability(false);
       return;
@@ -103,8 +80,7 @@ export function BookingDrawer({
 
     const params = new URLSearchParams({
       check_in: checkInDate,
-      ...(checkOutDate ? { check_out: checkOutDate } : {}),
-      duration: duration,
+      duration: "Long Term",
       building: selectedBuildingSlug,
       ...(cleanRoomId ? { room_id: cleanRoomId } : {}),
     });
@@ -137,7 +113,7 @@ export function BookingDrawer({
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [checkInDate, checkOutDate, duration, selectedBuildingSlug, cleanRoomId]);
+  }, [checkInDate, selectedBuildingSlug, cleanRoomId]);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -150,32 +126,27 @@ export function BookingDrawer({
       if (targetDate && !checkInDate) {
         setCheckInDate(targetDate);
       }
-      const urlDuration = searchParams?.get("duration");
-      if ((urlDuration === "Long Term" || urlDuration === "Short Term") && !duration) {
-        setDuration(urlDuration);
-      }
     } else {
       setIsNavigating(false);
       isNavigatingRef.current = false;
     }
-  }, [isOpen, room, searchParams, checkInDate, duration]);
+  }, [isOpen, room, searchParams, checkInDate]);
 
   // Prefetch checkout route in background when details are selected to minimize transition delay
   useEffect(() => {
-    if (isOpen && duration && checkInDate) {
+    if (isOpen && checkInDate) {
       const queryParams = new URLSearchParams({
         building: selectedBuildingSlug,
         ...(room ? { roomId: room.id } : {}),
         persons: numPersons || "1",
-        duration: duration || "Long Term",
+        duration: "Long Term",
         ...(checkInDate ? { checkIn: checkInDate } : {}),
-        ...(duration === "Short Term" && checkOutDate ? { checkOut: checkOutDate } : {}),
       });
       try {
         router.prefetch(`/checkout?${queryParams.toString()}`);
       } catch {}
     }
-  }, [isOpen, duration, checkInDate, checkOutDate, selectedBuildingSlug, room, numPersons, router]);
+  }, [isOpen, checkInDate, selectedBuildingSlug, room, numPersons, router]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -292,28 +263,8 @@ export function BookingDrawer({
       return;
     }
 
-    if (!duration) {
-      alert("Please select duration of stay.");
-      return;
-    }
-
     if (!checkInDate) {
       alert("Please select a check-in date.");
-      return;
-    }
-
-    if (duration === "Short Term" && !checkOutDate) {
-      alert("Please select a check-out date.");
-      return;
-    }
-
-    if (
-      duration === "Short Term" &&
-      checkOutDate &&
-      checkInDate &&
-      checkOutDate <= checkInDate
-    ) {
-      alert("Check-out date must be after check-in date.");
       return;
     }
 
@@ -329,9 +280,8 @@ export function BookingDrawer({
       building: selectedBuildingSlug,
       ...(room ? { roomId: room.id } : {}),
       persons: numPersons || "1",
-      duration: duration || "Long Term",
+      duration: "Long Term",
       ...(checkInDate ? { checkIn: checkInDate } : {}),
-      ...(duration === "Short Term" && checkOutDate ? { checkOut: checkOutDate } : {}),
     });
 
     const targetUrl = `/checkout?${queryParams.toString()}`;
@@ -526,24 +476,10 @@ export function BookingDrawer({
                   </label>
                   <select
                     value={duration}
-                    onChange={(e) => {
-                      const newDur = e.target.value as "Long Term" | "Short Term";
-                      setDuration(newDur);
-                      if (newDur !== "Short Term") {
-                        setCheckOutDate("");
-                      }
-                      if (!newDur || !checkInDate) {
-                        setAvailabilityResult(null);
-                      }
-                    }}
-                    required
+                    onChange={(e) => setDuration("Long Term")}
                     className="w-full h-11 px-3 pr-8 bg-white border border-gray-300 rounded-md text-xs sm:text-sm text-gray-900 shadow-xs focus:outline-none focus:ring-1 focus:ring-[#FF561C] focus:border-[#FF561C] appearance-none cursor-pointer"
                   >
-                    <option value="" disabled>
-                      Select Duration
-                    </option>
                     <option value="Long Term">Long Term</option>
-                    <option value="Short Term">Short Term</option>
                   </select>
                   <ChevronDown className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -554,11 +490,8 @@ export function BookingDrawer({
                   value={checkInDate}
                   onChange={(date) => {
                     setCheckInDate(date);
-                    if (!date || !duration) {
+                    if (!date) {
                       setAvailabilityResult(null);
-                    }
-                    if (checkOutDate && date && checkOutDate <= date) {
-                      setCheckOutDate("");
                     }
                   }}
                   minDate={new Date().toISOString().split("T")[0]}
@@ -573,26 +506,6 @@ export function BookingDrawer({
                 <div className="px-3 py-2 rounded-md bg-amber-50 border border-amber-200 flex items-center gap-2 text-xs text-amber-800">
                   <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse"></span>
                   <span>{(room as any)?.availableFromDisplay || "Available soon"}</span>
-                </div>
-              )}
-
-              {/* Conditional Row: Check Out Date for Short Term stay */}
-              {duration === "Short Term" && (
-                <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-                  <FancyDatePicker
-                    label="Check Out Date"
-                    value={checkOutDate}
-                    onChange={(date) => {
-                      setCheckOutDate(date);
-                      if (!date) {
-                        setAvailabilityResult(null);
-                      }
-                    }}
-                    minDate={minCheckOutDate}
-                    placeholder="Select check-out"
-                    align="right"
-                    required
-                  />
                 </div>
               )}
 

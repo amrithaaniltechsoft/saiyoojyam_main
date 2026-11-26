@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Calendar, X, MapPin, Printer, Receipt, ShieldCheck } from "lucide-react";
+import { Check, Calendar, X, MapPin, Printer, Receipt, ShieldCheck, CreditCard } from "lucide-react";
 import { BuildingDetailData } from "@/data/buildingsData";
 import { RoomItem } from "@/data/roomsData";
 
@@ -17,6 +17,8 @@ export interface InvoiceDetails {
   inmates_id?: number | string;
   print_url?: string;
   receipt_url?: string;
+  transaction_id?: string;
+  payment_method?: string;
 }
 
 interface CheckoutSuccessModalProps {
@@ -158,6 +160,27 @@ export function CheckoutSuccessModal({
               </span>
               <span className="font-semibold text-gray-900 font-mono">
                 INV-{invoiceData.invoice_id}
+              </span>
+            </div>
+          )}
+
+          {invoiceData?.transaction_id && (
+            <div className="flex items-center justify-between py-1">
+              <span className="text-gray-600 font-medium flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5 text-gray-500" />
+                Payment Gateway Txn ID
+              </span>
+              <span className="font-semibold text-emerald-700 font-mono text-xs">
+                {invoiceData.transaction_id}
+              </span>
+            </div>
+          )}
+
+          {invoiceData?.payment_method && (
+            <div className="flex items-center justify-between py-1">
+              <span className="text-gray-600 font-medium">Payment Mode</span>
+              <span className="font-semibold text-gray-900 text-xs">
+                {invoiceData.payment_method}
               </span>
             </div>
           )}

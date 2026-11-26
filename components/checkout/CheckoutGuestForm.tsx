@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
   X,
   CheckCircle2,
+  ShieldCheck,
 } from "lucide-react";
 
 interface DocumentDropzoneProps {
