@@ -278,6 +278,8 @@ interface CheckoutGuestFormProps {
   setPhone: (v: string) => void;
   whatsapp: string;
   setWhatsapp: (v: string) => void;
+  placeOfWork: string;
+  setPlaceOfWork: (v: string) => void;
   guardianName: string;
   setGuardianName: (v: string) => void;
   relation: string;
@@ -324,6 +326,8 @@ export function CheckoutGuestForm({
   setPhone,
   whatsapp,
   setWhatsapp,
+  placeOfWork,
+  setPlaceOfWork,
   guardianName,
   setGuardianName,
   relation,
@@ -458,11 +462,12 @@ export function CheckoutGuestForm({
             </div>
 
             {/* WhatsApp */}
-            <div className="relative sm:col-span-2">
+            <div className="relative">
               <label className="absolute -top-2.5 left-3 px-1.5 bg-white text-xs font-semibold text-gray-950 z-10">
                 WhatsApp number <span className="text-red-600">*</span>
               </label>
               <input
+                id="guest-whatsapp-input"
                 type="number"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -477,6 +482,22 @@ export function CheckoutGuestForm({
                 onChange={(e) => setWhatsapp(e.target.value.replace(/[^0-9]/g, ""))}
                 placeholder="WhatsApp number"
                 className="w-full h-11 px-3 bg-white border border-gray-400 rounded-md text-sm text-gray-950 placeholder-gray-500 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#FF561C] focus:border-[#FF561C] font-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
+
+            {/* Place of Work or Institute Name */}
+            <div className="relative">
+              <label className="absolute -top-2.5 left-3 px-1.5 bg-white text-xs font-semibold text-gray-950 z-10">
+                Place of work or institute name <span className="text-red-600">*</span>
+              </label>
+              <input
+                id="guest-place-of-work-input"
+                type="text"
+                required
+                value={placeOfWork}
+                onChange={(e) => setPlaceOfWork(e.target.value)}
+                placeholder="Place of work or institute name"
+                className="w-full h-11 px-3 bg-white border border-gray-400 rounded-md text-sm text-gray-950 placeholder-gray-500 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#FF561C] focus:border-[#FF561C] font-normal"
               />
             </div>
           </div>

@@ -46,6 +46,7 @@ export function CheckoutBookingSection({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [placeOfWork, setPlaceOfWork] = useState("");
   const [guardianName, setGuardianName] = useState("");
   const [relation, setRelation] = useState("");
   const [contactNumber, setContactNumber] = useState("");
@@ -165,6 +166,9 @@ export function CheckoutBookingSection({
           const parsed = JSON.parse(storedData);
           if (parsed.email) setEmail((prev) => (prev ? prev : parsed.email));
           if (parsed.phone) setPhone((prev) => (prev ? prev : parsed.phone));
+          if (parsed.placeOfWork || parsed.place_of_work) {
+            setPlaceOfWork((prev) => (prev ? prev : (parsed.placeOfWork || parsed.place_of_work)));
+          }
         }
         if (stored) {
           setLoginError(null);
@@ -253,6 +257,27 @@ export function CheckoutBookingSection({
           setAlertModal(null);
           setTimeout(() => {
             const input = document.getElementById("guest-phone-input") as HTMLInputElement | null;
+            if (input) {
+              input.scrollIntoView({ behavior: "smooth", block: "center" });
+              input.focus();
+            }
+          }, 150);
+        },
+      });
+      return;
+    }
+
+    if (!placeOfWork.trim()) {
+      setAlertModal({
+        isOpen: true,
+        title: "Place of Work / Institute Required",
+        message: "Please enter your place of work or institute name to proceed with your booking.",
+        type: "warning",
+        primaryButtonText: "Enter Place of Work",
+        onPrimaryClick: () => {
+          setAlertModal(null);
+          setTimeout(() => {
+            const input = document.getElementById("guest-place-of-work-input") as HTMLInputElement | null;
             if (input) {
               input.scrollIntoView({ behavior: "smooth", block: "center" });
               input.focus();
@@ -368,7 +393,7 @@ export function CheckoutBookingSection({
     formData.append("guardianName", guardianName || name);
     formData.append("relation", relation || "Parent");
     formData.append("contactNumber", contactNumber || phone);
-    formData.append("placeOfWork", "");
+    formData.append("placeOfWork", placeOfWork.trim());
     const effectiveRoomId =
       room?.id
         ? room.id.replace(/^room-/, "")
@@ -648,6 +673,8 @@ export function CheckoutBookingSection({
         setPhone={setPhone}
         whatsapp={whatsapp}
         setWhatsapp={setWhatsapp}
+        placeOfWork={placeOfWork}
+        setPlaceOfWork={setPlaceOfWork}
         guardianName={guardianName}
         setGuardianName={setGuardianName}
         relation={relation}
